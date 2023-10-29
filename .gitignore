@@ -1,0 +1,6 @@
+venv
+VOICE_PROMPT.wav
+BGM_OUTPUT.wav
+.idea
+__pycache__
+test*
