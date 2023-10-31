@@ -9,9 +9,9 @@ import whisper
 from audiocraft.data.audio import audio_write
 from audiocraft.models import MusicGen
 
-CONFIG_FILE = 'config.json'
+CONFIG_FILE = './config.json'
 
-with open('./'+CONFIG_FILE, 'r') as f:
+with open(CONFIG_FILE, 'r') as f:
     config: dict = json.loads(f.read())
 
 music_model = MusicGen.get_pretrained(config['music_model'])
@@ -52,27 +52,7 @@ def GPT4_pipline(img: str, voice_prompt: str=None):
                 response = openai.ChatCompletion.create(
                     model=openai_config['model'],
                     messages=[{"role": "user", "content": openai_config['img_and_voice_to_prompt'] + voice_prompt}],
-                    functions=[
-                        {
-                            "name": "get_sd_and_musicgen_prompt",
-                            "description": "use key word to describe a image to make stable diffusion be able to generate image"
-                                           " and make music generator be able to generate music.",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "img_prompt": {
-                                        "type": "string",
-                                        "description": "describe the image like: \"little dog, gray skin, big eyes, looking at viewer\", etc."
-                                    },
-                                    "bgm_prompt": {
-                                        "type": "string",
-                                        "description": "describe the music like: \"a light and cheerly EDM track, with syncopated drums, aery pads, and strong emotions bpm: 130\", etc."
-                                    },
-                                },
-                                "required": ["img_prompt", "bgm_prompt"],
-                            },
-                        }
-                    ]
+                    functions=openai_config['functions_prompt']
                 )
                 response_message = response["choices"][0]["message"]
 
@@ -82,8 +62,7 @@ def GPT4_pipline(img: str, voice_prompt: str=None):
                 except json.decoder.JSONDecodeError:
                     response = openai.ChatCompletion.create(
                         model=openai_config['model'],
-                        messages=[{"role": "user", "content": "Complete the json syntax errors in the following text according to the legal json format."
-                                                              "You don't need to say any thing except the json.\n" + response_message["function_call"]["arguments"]}]
+                        messages=[{"role": "user", "content": openai_config['json_fix_prompt'] + response_message["function_call"]["arguments"]}]
                     )
                     response_message = response["choices"][0]["message"]
                     try:
@@ -132,7 +111,7 @@ def save_config(key: Union[str, dict], value=None):
     else:
         config.update(key)
 
-    with open('./'+CONFIG_FILE, 'w') as f:
+    with open(CONFIG_FILE, 'w') as f:
         f.write(json.dumps(config, indent=2))
 
     if key == 'music_model':
