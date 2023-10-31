@@ -1,20 +1,24 @@
 import base64
 import json
 import os
+from typing import Union
+
 import openai
-
 import requests
-from audiocraft.models import MusicGen
+import whisper
 from audiocraft.data.audio import audio_write
+from audiocraft.models import MusicGen
 
-with open('./config.json', 'r') as f:
-    config = json.loads(f.read())
+CONFIG_FILE = 'config.json'
+
+with open('./'+CONFIG_FILE, 'r') as f:
+    config: dict = json.loads(f.read())
 
 music_model = MusicGen.get_pretrained(config['music_model'])
 music_model.set_generation_params(duration=config['BGM_duration'])
+whisper_model = whisper.load_model(config['whisper_model'])
 
-sd_payload = config['sd_payload']
-openai.api_key = os.getenv("OPENAI_API_KEY") if os.getenv("OPENAI_API_KEY") is None else config['openai']['api_key']
+openai.api_key = config['openai']['api_key'] if config['openai']['api_key'] is None else os.getenv("OPENAI_API_KEY")
 
 async def music_gen_pipline(prompt: str):
     """
@@ -102,7 +106,7 @@ async def stable_diffusion_pipline(prompt: str, img: str):
     :return: generated img warp by raw base64 text
     """
     url = "http://127.0.0.1:7860"
-
+    sd_payload = config['sd_payload']
     sd_payload['prompt'] = prompt
     sd_payload['init_images'].append(img)
 
@@ -112,3 +116,33 @@ async def stable_diffusion_pipline(prompt: str, img: str):
     print('Image generated done.')
 
     return r['images'][0]
+
+def save_config(key: Union[str, dict], value=None):
+    """
+    save config and reload model if necessary
+    :param key: `dict` or `str`. `dict` will update config by `dict`, `str` will update config by key-value pair
+    :param value: only work if `key` is `str`
+    """
+    global music_model, whisper_model
+    if isinstance(key, str):
+        if isinstance(value, dict) and isinstance(config[key], dict):
+            config[key].update(value)
+        else:
+            config[key] = value
+    else:
+        config.update(key)
+
+    with open('./'+CONFIG_FILE, 'w') as f:
+        f.write(json.dumps(config, indent=2))
+
+    if key == 'music_model':
+        music_model = MusicGen.get_pretrained(config[key])
+
+    if key == 'BGM_duration':
+        music_model.set_generation_params(duration=config[key])
+
+    if key == 'whisper_model':
+        whisper_model = whisper.load_model(config[key])
+
+    if key == 'openai':
+        openai.api_key = config['openai']['api_key']
