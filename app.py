@@ -17,13 +17,13 @@ def index():
 @app.route('/config', methods=['GET', 'POST'])
 def config():
     if request.method == 'GET':
-        return jsonify(config)
+        return jsonify(util.config)
     else:
-        args = request.args
+        args = dict(request.args)
         if request.is_json:
             args.update(request.json)
         util.save_config(args)
-        return jsonify(config)
+        return jsonify(util.config)
 
 @app.route('/generate', methods=['POST'])
 def generate():
