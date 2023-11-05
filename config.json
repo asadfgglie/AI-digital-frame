@@ -19,7 +19,7 @@
     "n_iter": 1,
     "negative_prompt": "(EasyNegative:0.8), (wost quality, low quality:1.4), blurry, blur, bokeh, fog, mist, bloom, (latex, shiny clothes:1.2), tight, skin tight, impossible clothes, white border, impossible body, impossible hand, incorrect fingers",
     "override_settings": {
-      "clip skip": 2
+      "CLIP_stop_at_last_layers": 2
     },
     "override_settings_restore_afterwards": true,
     "prompt": "(masterpice, best quality, high quality, highres:1.4), extremely detailed, detailed skin, ambient soft lighting, 4K,",
@@ -39,7 +39,7 @@
     "seed_resize_from_h": -1,
     "seed_resize_from_w": -1,
     "send_images": true,
-    "steps": 5,
+    "steps": 40,
     "subseed": -1,
     "subseed_strength": 0,
     "tiling": false,

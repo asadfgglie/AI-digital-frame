@@ -1,7 +1,10 @@
 import base64
+import io
 import json
 import os
 from typing import Union
+
+from PIL import Image
 
 import openai
 import requests
@@ -9,6 +12,7 @@ import whisper
 from audiocraft.data.audio import audio_write
 from audiocraft.models import MusicGen
 import logging
+logging.basicConfig(level=logging.INFO)
 
 CONFIG_FILE = './config.json'
 
@@ -96,6 +100,7 @@ async def stable_diffusion_pipline(prompt: str, img: str):
 
     r = response.json()
     logging.info('Image generated done.')
+    Image.open(io.BytesIO(base64.b64decode(r['images'][0]))).save('IMAGE_OUTPUT.png')
 
     return r['images'][0]
 
@@ -112,7 +117,11 @@ def save_config(key: Union[str, dict], value=None):
         else:
             config[key] = value
     else:
-        config.update(key)
+        for k, v in key.items():
+            if isinstance(v , dict):
+                config[k].update(v)
+            else:
+                config[k] = v
 
     with open(CONFIG_FILE, 'w') as f:
         f.write(json.dumps(config, indent=2))

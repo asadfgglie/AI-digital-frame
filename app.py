@@ -47,17 +47,15 @@ def generate():
 
     # gpt4_reply = json.loads(gpt4_reply)
 
-    async def tmp(img, gpt4_reply):
-        img = asyncio.create_task(util.stable_diffusion_pipline('asdwadasd', img))#gpt4_reply['img_prompt'], img))
-        bgm = asyncio.create_task(util.music_gen_pipline('sadwada'))#gpt4_reply['bgm_prompt']))
-        return await img, await bgm
-
-    img, bgm = asyncio.run(tmp(img, None))#gpt4_reply))
+    img, bgm = asyncio.run(asyncio.wait([util.stable_diffusion_pipline('asdwadasd', #gpt4_reply["img_prompt"]
+                                                                       img),
+                                         util.music_gen_pipline('sadwada', #gpt4_reply["bgm_prompt"]
+                                                                )]))
 
     # pic_comment = util.GPT4_pipline(img)
 
     return jsonify({
-        # 'img_comment': pic_comment,
+        'img_comment': 'test comment', #pic_comment,
         'img': img,
         'bgm': bgm
     })
