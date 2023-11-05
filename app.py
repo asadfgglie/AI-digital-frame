@@ -47,10 +47,18 @@ def generate():
 
     # gpt4_reply = json.loads(gpt4_reply)
 
-    img, bgm = asyncio.run(asyncio.wait([util.stable_diffusion_pipline('asdwadasd', #gpt4_reply["img_prompt"]
+    output_set: tuple[set[asyncio.Task], set] = asyncio.run(asyncio.wait([util.stable_diffusion_pipline('asdwadasd', #gpt4_reply["img_prompt"]
                                                                        img),
                                          util.music_gen_pipline('sadwada', #gpt4_reply["bgm_prompt"]
                                                                 )]))
+    output_set: list[asyncio.Task] = list(output_set[0])
+    bgm = None
+    img = None
+    for i in output_set:
+        if i.get_coro().__name__ is util.music_gen_pipline.__name__:
+            bgm = i.result()
+        elif i.get_coro().__name__ is util.stable_diffusion_pipline.__name__:
+            img = i.result()
 
     # pic_comment = util.GPT4_pipline(img)
 
