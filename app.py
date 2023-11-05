@@ -1,7 +1,7 @@
 import asyncio
 import base64
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import json
 
 import util
@@ -12,7 +12,7 @@ VOICE_PROMPT = './VOICE_PROMPT.wav'
 
 @app.route('/')
 def index():
-    return '<h1>This is AI digital frame backend server.</h1>'
+    return render_template('index.html')
 
 @app.route('/config', methods=['GET', 'POST'])
 def config():
@@ -43,21 +43,21 @@ def generate():
             f.write(base64.b64decode(voice_prompt))
         voice_prompt = util.whisper_model.transcribe(VOICE_PROMPT)
 
-    gpt4_reply = util.GPT4_pipline(img, voice_prompt)
+    # gpt4_reply = util.GPT4_pipline(img, voice_prompt)
 
-    gpt4_reply = json.loads(gpt4_reply)
+    # gpt4_reply = json.loads(gpt4_reply)
 
     async def tmp(img, gpt4_reply):
-        img = asyncio.create_task(util.stable_diffusion_pipline(gpt4_reply['img_prompt'], img))
-        bgm = asyncio.create_task(util.music_gen_pipline(gpt4_reply['bgm_prompt']))
+        img = asyncio.create_task(util.stable_diffusion_pipline('asdwadasd', img))#gpt4_reply['img_prompt'], img))
+        bgm = asyncio.create_task(util.music_gen_pipline('sadwada'))#gpt4_reply['bgm_prompt']))
         return await img, await bgm
 
-    img, bgm = asyncio.run(tmp(img, gpt4_reply))
+    img, bgm = asyncio.run(tmp(img, None))#gpt4_reply))
 
-    pic_comment = util.GPT4_pipline(img)
+    # pic_comment = util.GPT4_pipline(img)
 
     return jsonify({
-        'picture_comment': pic_comment,
+        # 'img_comment': pic_comment,
         'img': img,
         'bgm': bgm
     })

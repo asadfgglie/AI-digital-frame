@@ -17,10 +17,12 @@
     "inpainting_fill": 0,
     "inpainting_mask_invert": 0,
     "n_iter": 1,
-    "negative_prompt": "",
-    "override_settings": {},
+    "negative_prompt": "(EasyNegative:0.8), (wost quality, low quality:1.4), blurry, blur, bokeh, fog, mist, bloom, (latex, shiny clothes:1.2), tight, skin tight, impossible clothes, white border, impossible body, impossible hand, incorrect fingers",
+    "override_settings": {
+      "clip skip": 2
+    },
     "override_settings_restore_afterwards": true,
-    "prompt": null,
+    "prompt": "(masterpice, best quality, high quality, highres:1.4), extremely detailed, detailed skin, ambient soft lighting, 4K,",
     "resize_mode": 0,
     "restore_faces": false,
     "s_churn": 0,
