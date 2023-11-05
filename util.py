@@ -100,7 +100,7 @@ async def stable_diffusion_pipline(prompt: str, img: str):
 
     r = response.json()
     logging.info('Image generated done.')
-    # Image.open(io.BytesIO(base64.b64decode(r['images'][0]))).save('IMAGE_OUTPUT.png')
+    Image.open(io.BytesIO(base64.b64decode(r['images'][0]))).save('./IMAGE_OUTPUT.png')
 
     return r['images'][0]
 
