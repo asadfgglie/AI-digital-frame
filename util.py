@@ -1,26 +1,34 @@
 import base64
+import copy
 import io
 import json
+import logging
 import os
-from typing import Union
-
-from PIL import Image
+from queue import Queue
+from typing import Union, Callable
 
 import openai
 import requests
 import whisper
+from PIL import Image
 from audiocraft.data.audio import audio_write
 from audiocraft.models import MusicGen
-import logging
+
 logging.basicConfig(level=logging.INFO)
+
+TASK_QUEUE_REGIS: dict[str, list] = dict()
 
 CONFIG_FILE = './config.json'
 
+logging.info('Load config...')
 with open(CONFIG_FILE, 'r') as f:
     config: dict = json.loads(f.read())
 
+logging.info('Load MusicGen model...')
 music_model = MusicGen.get_pretrained(config['music_model'])
 music_model.set_generation_params(duration=config['BGM_duration'])
+
+logging.info('Load whisper model...')
 whisper_model = whisper.load_model(config['whisper_model'])
 
 openai.api_key = config['openai']['api_key'] if config['openai']['api_key'] is None else os.getenv("OPENAI_API_KEY")
@@ -49,7 +57,10 @@ def GPT4_pipline(img: str, voice_prompt: str=None):
     """
     # TODO: 我去翻了openai的doc，我沒看到gpt4 with vision的api,所以我需要有人幫我找找這vision版具體怎麼用
     # 他好像是要先花錢排隊，等openai寄信給你你才能用的樣子
-    openai_config = config['openai']
+    if isinstance(img, tuple):
+        return img
+
+    openai_config = copy.deepcopy(config['openai'])
 
     if voice_prompt is not None: # use image and voice to generate prompt
         response_message = None
@@ -92,17 +103,21 @@ async def stable_diffusion_pipline(prompt: str, img: str):
     """
     logging.info('Image generation start')
     url = "http://127.0.0.1:7860"
-    sd_payload = config['sd_payload']
+    sd_payload = copy.deepcopy(config['sd_payload'])
     sd_payload['prompt'] = sd_payload['prompt'] + prompt
     sd_payload['init_images'].append(img)
 
     response = requests.post(url=f'{url}/sdapi/v1/img2img', json=sd_payload)
 
-    r = response.json()
-    logging.info('Image generated done.')
-    Image.open(io.BytesIO(base64.b64decode(r['images'][0]))).save('./IMAGE_OUTPUT.png')
 
-    return r['images'][0]
+    if response.status_code == 200:
+        r = response.json()
+        logging.info('Image generated done.')
+        Image.open(io.BytesIO(base64.b64decode(r['images'][0]))).save('./IMAGE_OUTPUT.png')
+
+        return r['images'][0]
+    else:
+        return 'stable diffusion error!', response.status_code
 
 def save_config(key: Union[str, dict], value=None):
     """
@@ -137,3 +152,10 @@ def save_config(key: Union[str, dict], value=None):
 
     if key == 'openai':
         openai.api_key = config['openai']['api_key']
+
+def task_queue_register(rule: str):
+    def decorator(f: Callable):
+        TASK_QUEUE_REGIS[rule] = []
+        return f
+
+    return decorator

@@ -1,8 +1,12 @@
 import asyncio
 import base64
+import logging
+import time
+import logging
 
 from flask import Flask, request, jsonify, render_template
 import json
+import uuid
 
 import util
 
@@ -26,6 +30,7 @@ def config():
         return jsonify(util.config)
 
 @app.route('/generate', methods=['POST'])
+@util.task_queue_register('/generate')
 def generate():
     """
     :http body json args:
@@ -47,10 +52,11 @@ def generate():
 
     # gpt4_reply = json.loads(gpt4_reply)
 
-    output_set: tuple[set[asyncio.Task], set] = asyncio.run(asyncio.wait([util.stable_diffusion_pipline('asdwadasd', #gpt4_reply["img_prompt"]
-                                                                       img),
-                                         util.music_gen_pipline('sadwada', #gpt4_reply["bgm_prompt"]
-                                                                )]))
+    output_set: tuple[set[asyncio.Task], set] = asyncio.run(asyncio.wait([
+        util.stable_diffusion_pipline('asdwadasd', #gpt4_reply["img_prompt"]
+                                       img),
+        util.music_gen_pipline('sadwada', #gpt4_reply["bgm_prompt"]
+    )]))
     output_set: list[asyncio.Task] = list(output_set[0])
     bgm = None
     img = None
@@ -67,6 +73,16 @@ def generate():
         'img': img,
         'bgm': bgm
     })
+
+@app.before_request
+def task_queue():
+    if request.path in util.TASK_QUEUE_REGIS.keys():
+        UUID = uuid.uuid4()
+        logging.info(f'add task {request.path}, uuid: {UUID}')
+        util.TASK_QUEUE_REGIS[request.path].append(UUID)
+        while util.TASK_QUEUE_REGIS[request.path][0] != UUID:
+            time.sleep(0.1)
+        del util.TASK_QUEUE_REGIS[request.path][0]
 
 if __name__ == '__main__':
     app.run()
