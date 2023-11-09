@@ -1,48 +1,17 @@
 {
   "sd_payload": {
-    "alwayson_scripts": {},
     "batch_size": 1,
-    "cfg_scale": 7,
-    "denoising_strength": 0.75,
-    "do_not_save_grid": false,
-    "do_not_save_samples": false,
-    "eta": 0,
     "height": 480,
-    "image_cfg_scale": 0,
-    "include_init_images": false,
     "init_images": [],
-    "initial_noise_multiplier": 0,
-    "inpaint_full_res": true,
-    "inpaint_full_res_padding": 0,
-    "inpainting_fill": 0,
-    "inpainting_mask_invert": 0,
-    "n_iter": 1,
     "negative_prompt": "(EasyNegative:0.8), (wost quality, low quality:1.4), blurry, blur, bokeh, fog, mist, bloom, (latex, shiny clothes:1.2), tight, skin tight, impossible clothes, white border, impossible body, impossible hand, incorrect fingers",
     "override_settings": {
       "CLIP_stop_at_last_layers": 2
     },
     "override_settings_restore_afterwards": true,
     "prompt": "(masterpiece, best quality, high quality, highres:1.4), extremely detailed, detailed skin, ambient soft lighting, 4K,",
-    "resize_mode": 0,
-    "restore_faces": false,
-    "s_churn": 0,
-    "s_min_uncond": 0,
-    "s_noise": 1,
-    "s_tmax": 0,
-    "s_tmin": 0,
-    "sampler_index": "Euler",
-    "sampler_name": null,
     "save_images": false,
-    "script_args": [],
-    "script_name": null,
-    "seed": -1,
-    "seed_resize_from_h": -1,
-    "seed_resize_from_w": -1,
     "send_images": true,
-    "steps": 1,
-    "subseed": -1,
-    "subseed_strength": 0,
-    "tiling": false,
+    "steps": 40,
     "width": 800
   },
   "openai": {
@@ -73,9 +42,9 @@
     "img_and_voice_to_prompt": "If we want you according to this image the voice to imagine another picture, what do you think? And if we want you according to this image and the voice to describe a piece of melody, what do you think?\nvoice: ",
     "img_to_comment": "Give this image some comment and description.",
     "json_fix_prompt": "Complete the json syntax errors in the following text according to the legal json format. You don't need to say any thing except the json.\n",
-    "model": "gpt-4"
+    "model": "gpt-4-vision-preview"
   },
   "whisper_model": "tiny",
   "music_model": "facebook/musicgen-small",
-  "BGM_duration": 1
+  "BGM_duration": 15
 }

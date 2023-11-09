@@ -16,8 +16,6 @@ from audiocraft.models import MusicGen
 
 logging.basicConfig(level=logging.INFO)
 
-TASK_QUEUE_REGIS: dict[str, list] = dict()
-
 CONFIG_FILE = './config.json'
 
 logging.info('Load config...')
@@ -68,7 +66,15 @@ def GPT4_pipline(img: str, voice_prompt: str=None):
             if response_message is None:
                 response = openai.ChatCompletion.create(
                     model=openai_config['model'],
-                    messages=[{"role": "user", "content": openai_config['img_and_voice_to_prompt'] + voice_prompt}],
+                    messages=[{"role": "user", "content": [{
+                        'type': 'text',
+                        'text': openai_config['img_and_voice_to_prompt'] + voice_prompt}]
+                               },{
+                        'type': 'image_url',
+                        'image_url': {
+                          "url": f"data:image/png;base64,{img}"
+                        }
+                    }],
                     functions=openai_config['functions_prompt']
                 )
                 response_message = response["choices"][0]["message"]
@@ -79,7 +85,10 @@ def GPT4_pipline(img: str, voice_prompt: str=None):
                 except json.decoder.JSONDecodeError:
                     response = openai.ChatCompletion.create(
                         model=openai_config['model'],
-                        messages=[{"role": "user", "content": openai_config['json_fix_prompt'] + response_message["function_call"]["arguments"]}]
+                        messages=[{"role": "user", "content": [
+                            {'type': 'text', 'text': openai_config['json_fix_prompt'] + response_message["function_call"]["arguments"]},
+                            {'type': 'image_url', 'image_url': f"data:image/png;base64,{img}"}
+                        ]}]
                     )
                     response_message = response["choices"][0]["message"]
                     try:
@@ -106,6 +115,7 @@ async def stable_diffusion_pipline(prompt: str, img: str):
     sd_payload = copy.deepcopy(config['sd_payload'])
     sd_payload['prompt'] = sd_payload['prompt'] + prompt
     sd_payload['init_images'].append(img)
+    logging.info('prompt: ' + sd_payload['prompt'])
 
     response = requests.post(url=f'{url}/sdapi/v1/img2img', json=sd_payload)
 
@@ -152,10 +162,3 @@ def save_config(key: Union[str, dict], value=None):
 
     if key == 'openai':
         openai.api_key = config['openai']['api_key']
-
-def task_queue_register(rule: str):
-    def decorator(f: Callable):
-        TASK_QUEUE_REGIS[rule] = []
-        return f
-
-    return decorator
