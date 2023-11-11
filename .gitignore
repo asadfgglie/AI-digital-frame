@@ -5,3 +5,5 @@ IMAGE_OUTPUT.png
 .idea
 __pycache__
 test*
+dev.env
+IMAGE_INPUT.png
