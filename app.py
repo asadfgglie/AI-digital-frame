@@ -70,11 +70,17 @@ def generate():
     img = args.get('img')
     Image.open(io.BytesIO(base64.b64decode(img))).save(util.IMG_INPUT)
     voice_prompt: str = args.get('voice', None)
-    image_prompt: str = args.get('image_prompt', 'blonde hair,  long hair, fox ears, curled hair,  fox girl, (fluffy tail), fat tail, hands on the ground,'
-            'gold eyes, black irises, long eyelashes, thick eyelashes,  looking at viewer,  smile, '
-            '(gold cheongsam), belt, [ornate clothes], black bowtie, white thighhighs, black stockings,'
-            'thick thighs, ')
-    bgm_prompt: str = args.get('bgm_prompt', 'casual, light, relaxing, piano music, ')
+    image_prompt: str = args.get('image_prompt', '')
+    bgm_prompt: str = args.get('bgm_prompt', '')
+
+    if image_prompt == '' and bgm_prompt == '' and util.config['now_prompt_style'] is not None:
+        try:
+            style = util.config["prompt_style"][util.config['now_prompt_style']]
+            image_prompt = style['image_prompt']
+            bgm_prompt = style['bgm_prompt']
+        except:
+            logging.info(f'Not find `{util.config["now_prompt_style"]}` prompt style.')
+
     if voice_prompt is not None:
         with open(util.VOICE_PROMPT, 'wb') as f:
             logging.info('save ' + util.VOICE_PROMPT)
@@ -82,22 +88,26 @@ def generate():
         voice_prompt = util.whisper_model.transcribe(util.VOICE_PROMPT)["text"]
         logging.info('transcribe voice: ' + voice_prompt)
 
-    logging.info('interrogate image prompt...')
-    t1 = time.time()
-    interrogate_img_prompt: str = requests.post("http://127.0.0.1:7860/sdapi/v1/interrogate", json={
-        "image": img,
-        "model": "clip"
-    }).json()['caption']
-    logging.info('interrogate image prompt done. take {:.2f} sec.'.format(time.time() - t1))
+    image_generate_pipline = None
+    interrogate_img_prompt: str = ''
+    if config['image_generate_api'] in util.IMAGE_GENERATE_API['sd']:
+        logging.info('interrogate image prompt...')
+        t1 = time.time()
+        interrogate_img_prompt = requests.post("http://127.0.0.1:7860/sdapi/v1/interrogate", json={
+            "image": img,
+            "model": "clip"
+        }).json()['caption']
+        logging.info('interrogate image prompt done. take {:.2f} sec.'.format(time.time() - t1))
+        image_generate_pipline = util.stable_diffusion_pipline
+    elif config['image_generate_api'] in util.IMAGE_GENERATE_API['dall-e']:
+        image_generate_pipline = util.DALL_E_pipline
+    logging.info(f'Image api: {config["image_generate_api"]}')
 
-    gpt4_reply = {
-        "img_prompt":'', "bgm_prompt": ''
-    }
-    # gpt4_reply = util.GPT4_pipline(img, voice_prompt)
-    # logging.info('gpt4_reply: ' + str(gpt4_reply))
+    gpt4_reply = util.GPT4_pipline(img, voice_prompt)
+    logging.info('gpt4_reply: ' + str(gpt4_reply))
 
     output_set: tuple[set[asyncio.Task], set] = asyncio.run(asyncio.wait([
-        util.stable_diffusion_pipline(image_prompt + interrogate_img_prompt + gpt4_reply["img_prompt"],
+        image_generate_pipline(image_prompt + interrogate_img_prompt + gpt4_reply["img_prompt"],
                                       img),
         util.music_gen_pipline(bgm_prompt + ('"' + voice_prompt + '", ' if voice_prompt is not None else '') + gpt4_reply["bgm_prompt"],
                                util.VOICE_PROMPT
