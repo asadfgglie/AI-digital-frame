@@ -33,7 +33,7 @@ with open(CONFIG_FILE, 'r') as f:
 
 logging.info('Load MusicGen model...')
 music_model = MusicGen.get_pretrained(config['music_model'], DEVICE)
-music_model.set_generation_params(duration=config['BGM_duration'])
+music_model.set_generation_params(duration=int(config['BGM_duration']))
 
 logging.info('Load whisper model...')
 whisper_model = whisper.load_model(config['whisper_model'], DEVICE)
@@ -78,40 +78,69 @@ def GPT4_pipline(img: str, voice_prompt: str=None):
     if voice_prompt is not None: # use image and voice to generate prompt
         response_message = None
         for i in range(2):
+            logging.info(f'try times: {i}')
             if response_message is None:
                 response = openai.OpenAI().chat.completions.create(
                     model=openai_config['model'],
-                    messages=[{"role": "user", "content": [{
-                        'type': 'text',
-                        'text': openai_config['img_and_voice_to_prompt'].format(voice=voice_prompt)}]
-                               },{
-                        'type': 'image_url',
-                        'image_url': {
-                          "url": f"data:image/png;base64,{img}"
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    'type': 'text',
+                                    'text': openai_config['img_and_voice_to_prompt'].format(voice=voice_prompt)
+                                },
+                               {
+                                    'type': 'image_url',
+                                    'image_url': {
+                                        "url": f"data:image/png;base64,{img}",
+                                        'detail': 'low'
+                                    }
+                               }
+                            ]
                         }
-                    }],
+                    ],
+                    max_tokens=1000
                     # functions=openai_config['functions_prompt']
                 )
                 response_message = response.choices[0].message.content
-                logging.debug('GPT4: ' + response_message)
+                logging.info('GPT4: ' + response_message)
 
 
             try:
+                response_message = response_message.replace('```json\n','').replace('```','')
                 tmp = json.loads(response_message)
                 check = tmp['img_prompt'] and tmp['bgm_prompt']
                 return tmp
             except:
                 response = openai.OpenAI().chat.completions.create(
                     model=openai_config['model'],
-                    messages=[{"role": "user", "content": [
-                        {'type': 'text', 'text': openai_config['json_fix_prompt'] + response_message},
-                        {'type': 'image_url', 'image_url': f"data:image/png;base64,{img}"}
-                    ]}]
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    'type': 'text',
+                                    'text': openai_config['json_fix_prompt'] + response_message
+                                },
+                                {
+                                    'type': 'image_url',
+                                    'image_url': {
+                                        'url': f"data:image/png;base64,{img}",
+                                        'detail': 'low'
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens=1000
                 )
                 response_message = response.choices[0].message.content
-                logging.debug('GPT4: ' + response_message)
+                logging.info('GPT4: ' + response_message)
                 try:
-                    return json.loads(response_message)
+                    tmp = json.loads(response_message)
+                    check = tmp['img_prompt'] and tmp['bgm_prompt']
+                    return tmp
                 except json.decoder.JSONDecodeError:
                     continue
 
@@ -119,11 +148,27 @@ def GPT4_pipline(img: str, voice_prompt: str=None):
     else: # give img comment
         response_message = openai.OpenAI().chat.completions.create(
             model=openai_config['model'],
-            messages=[{"role": "user", "content": [
-                {'type': 'text', 'text': openai_config['img_to_comment']},
-                {'type': 'image_url', 'image_url': f"data:image/png;base64,{img}"}]}]
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            'type': 'text',
+                            'text': openai_config['img_to_comment']
+                        },
+                        {
+                            'type': 'image_url',
+                            'image_url': {
+                                'url': f"data:image/png;base64,{img}",
+                                'detail': 'low'
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens = 1000
         ).choices[0].message.content
-        logging.debug('GPT4: ' + response_message)
+        logging.info('GPT4: ' + response_message)
         return response_message
 
 async def DALL_E_pipline(prompt: str, img: str):
@@ -131,23 +176,24 @@ async def DALL_E_pipline(prompt: str, img: str):
     sd_payload['prompt'] = sd_payload['prompt'] + prompt
     logging.info('dall-e prompt: ' + sd_payload['prompt'])
 
-    img = Image.open(base64.b64decode(img))
-    img.resize(min(*img.size), min(*img.size))
+    img = Image.open(io.BytesIO(base64.b64decode(img)))
+    img.resize((min(*img.size), min(*img.size)))
     img_bytes = io.BytesIO()
     img.save(img_bytes, format='png')
 
     t1 = time.time()
-    response = openai.OpenAI().images.create_variation(
-        model='dall-e-2',
-        image=img_bytes.getvalue(),
+    response = openai.OpenAI().images.generate(
+        model='dall-e-3',
+        prompt=sd_payload['prompt'],
         n=1,
-        size='512x512'
+        size='1792x1024',
+        response_format='b64_json'
     )
 
     try:
         logging.info('Image generated done. take {:.2f} sec.'.format(time.time() - t1))
-        Image.open(io.BytesIO(base64.b64decode(response.data[0].url))).save('./IMAGE_OUTPUT.png')
-        return response.data[0].url
+        Image.open(io.BytesIO(base64.b64decode(response.data[0].b64_json))).save('./IMAGE_OUTPUT.png')
+        return response.data[0].b64_json
     except Exception as e:
         return 'dall-e error!', (response, e)
 
@@ -213,7 +259,7 @@ def save_config(key: Union[str, dict], value=None):
         torch.cuda.empty_cache()
 
     if 'BGM_duration' in key:
-        music_model.set_generation_params(duration=config['BGM_duration'])
+        music_model.set_generation_params(duration=int(config['BGM_duration']))
 
     if 'whisper_model' in key:
         whisper_model = whisper.load_model(config['whisper_model'], DEVICE)

@@ -90,7 +90,7 @@ def generate():
 
     image_generate_pipline = None
     interrogate_img_prompt: str = ''
-    if config['image_generate_api'] in util.IMAGE_GENERATE_API['sd']:
+    if util.config['image_generate_api'].lower() in util.IMAGE_GENERATE_API['sd']:
         logging.info('interrogate image prompt...')
         t1 = time.time()
         interrogate_img_prompt = requests.post("http://127.0.0.1:7860/sdapi/v1/interrogate", json={
@@ -99,9 +99,13 @@ def generate():
         }).json()['caption']
         logging.info('interrogate image prompt done. take {:.2f} sec.'.format(time.time() - t1))
         image_generate_pipline = util.stable_diffusion_pipline
-    elif config['image_generate_api'] in util.IMAGE_GENERATE_API['dall-e']:
+    elif util.config['image_generate_api'].lower() in util.IMAGE_GENERATE_API['dall-e']:
         image_generate_pipline = util.DALL_E_pipline
-    logging.info(f'Image api: {config["image_generate_api"]}')
+    else:
+        return jsonify({
+            'detail': f'set config.json `image_generate_api` as {util.IMAGE_GENERATE_API}'
+        }), 400
+    logging.info(f'Image api: {image_generate_pipline.__name__}')
 
     gpt4_reply = util.GPT4_pipline(img, voice_prompt)
     logging.info('gpt4_reply: ' + str(gpt4_reply))
@@ -118,8 +122,10 @@ def generate():
     for i in output_set:
         if i.get_coro().__name__ is util.music_gen_pipline.__name__:
             bgm = i.result()
-        elif i.get_coro().__name__ is util.stable_diffusion_pipline.__name__:
+        elif i.get_coro().__name__ is image_generate_pipline.__name__:
             img = i.result()
+    if isinstance(img, tuple):
+        logging.error(img[1][0], img[1][1])
 
     pic_comment = util.GPT4_pipline(img)
     logging.info('GPT4 comment: ' + pic_comment)

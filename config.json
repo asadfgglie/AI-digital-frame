@@ -44,7 +44,7 @@
   },
   "whisper_model": "tiny",
   "music_model": "facebook/musicgen-melody",
-  "BGM_duration": 15,
+  "BGM_duration": "5",
   "image_generate_api": "DALL-E",
   "now_prompt_style": null,
   "prompt_style": {
