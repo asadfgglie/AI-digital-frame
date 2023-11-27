@@ -1,8 +1,5 @@
 import argparse
 import os.path
-from typing import Optional
-
-from pyngrok import ngrok
 
 parser = argparse.ArgumentParser(
     prog=os.path.basename(__file__),
@@ -25,6 +22,9 @@ import logging
 logging.basicConfig(level=parser.parse_args().logging_level.upper(), format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logging.info('Importing...')
 
+from typing import Optional
+
+from pyngrok import ngrok
 if parser.parse_args().env:
     logging.info('load env values...')
     from dotenv import load_dotenv
