@@ -18,8 +18,12 @@ from audiocraft.data.audio import audio_write
 from audiocraft.models import MusicGen
 
 CONFIG_FILE = './config.json'
-VOICE_PROMPT = './VOICE_PROMPT.wav'
-IMG_INPUT = './IMAGE_INPUT.png'
+VOICE_PROMPT = './static/VOICE_PROMPT.wav'
+IMG_INPUT = './static/IMAGE_INPUT.png'
+IMG_OUTPUT = './static/IMAGE_OUTPUT.png'
+BGM_OUTPUT = './static/BGM_OUTPUT.wav'
+PORT = 5000
+
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 IMAGE_GENERATE_API = {
@@ -56,8 +60,8 @@ async def music_gen_pipline(prompt: str, voice: str=None):
         logging.info('load ' + VOICE_PROMPT)
         melody, sr = torchaudio.load(VOICE_PROMPT)
         wav = music_model.generate_with_chroma([prompt], melody, sr, True)
-    audio_write('./BGM_OUTPUT', wav.cpu()[0], music_model.sample_rate, strategy="loudness", loudness_compressor=True)
-    with open('./BGM_OUTPUT.wav', 'rb') as f:
+    audio_write(BGM_OUTPUT, wav.cpu()[0], music_model.sample_rate, strategy="loudness", loudness_compressor=True)
+    with open(BGM_OUTPUT, 'rb') as f:
         tmp = f.read()
     logging.info('Music generated done. take {:.2f} sec.'.format(time.time() - t1))
 
@@ -171,13 +175,8 @@ def GPT4_pipline(img: str, voice_prompt: str=None):
         logging.debug('GPT4: ' + response_message)
         return response_message
 
-async def DALL_E_pipline(prompt: str, img: str):
+async def DALL_E_pipline(prompt: str, _img=None):
     logging.info('dall-e prompt: ' + prompt)
-
-    img = Image.open(io.BytesIO(base64.b64decode(img)))
-    img.resize((min(*img.size), min(*img.size)))
-    img_bytes = io.BytesIO()
-    img.save(img_bytes, format='png')
 
     response = None
     try:
@@ -191,7 +190,7 @@ async def DALL_E_pipline(prompt: str, img: str):
         )
 
         logging.info('Image generated done. take {:.2f} sec.'.format(time.time() - t1))
-        Image.open(io.BytesIO(base64.b64decode(response.data[0].b64_json))).save('./IMAGE_OUTPUT.png')
+        Image.open(io.BytesIO(base64.b64decode(response.data[0].b64_json))).save(IMG_OUTPUT)
         return response.data[0].b64_json
     except Exception as e:
         return 'dall-e error!', (response, e)
@@ -217,7 +216,7 @@ async def stable_diffusion_pipline(prompt: str, img: str):
     if response.status_code == 200:
         r = response.json()
         logging.info('Image generated done. take {:.2f} sec.'.format(time.time() - t1))
-        Image.open(io.BytesIO(base64.b64decode(r['images'][0]))).save('./IMAGE_OUTPUT.png')
+        Image.open(io.BytesIO(base64.b64decode(r['images'][0]))).save(IMG_OUTPUT)
 
         return r['images'][0]
     else:

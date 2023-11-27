@@ -1,5 +1,8 @@
 import argparse
 import os.path
+from typing import Optional
+
+from pyngrok import ngrok
 
 parser = argparse.ArgumentParser(
     prog=os.path.basename(__file__),
@@ -10,9 +13,13 @@ parser.add_argument('-l', '--logging-level',
                     choices=tmp,
                     default='INFO',
                     help='set logging level')
-parser.add_argument('--env', action='store',
+parser.add_argument('--env', '-e', action='store',
                     help='what `.env` file should be load.',
                     default=False)
+parser.add_argument('--host', '-h', action='store',
+                    help='start host', default='localhost')
+parser.add_argument('--port', '-p', action='store',
+                    type=int, help='start post', default=5000)
 
 import logging
 logging.basicConfig(level=parser.parse_args().logging_level.upper(), format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -38,7 +45,7 @@ from PIL import Image
 from flask import Flask, request, jsonify, render_template
 
 import util
-from line import line
+import line
 logging.info('Import done.')
 
 app = Flask(__name__)
@@ -61,7 +68,7 @@ def config():
 @app.route('/generate', methods=['POST'])
 def generate():
     """
-    :http body json args:
+    http body json args:
         img: image warp by raw base64 text,
         voice: mp3 or wav file warp by raw base64 text
     :return:
@@ -69,7 +76,10 @@ def generate():
     """
     args = request.json
     img = args.get('img')
-    Image.open(io.BytesIO(base64.b64decode(img))).save(util.IMG_INPUT)
+    try:
+        Image.open(io.BytesIO(base64.b64decode(img))).save(util.IMG_INPUT)
+    except:
+        return 'need img as input!', 400
     voice_prompt: str = args.get('voice', None)
     image_prompt: str = args.get('image_prompt', '')
     bgm_prompt: str = args.get('bgm_prompt', '')
@@ -127,7 +137,7 @@ def generate():
     )]))
     output_set: list[asyncio.Task] = list(output_set[0])
     bgm = None
-    img = None
+    img:  Optional[str, tuple] = None
     for i in output_set:
         if i.get_coro().__name__ is util.music_gen_pipline.__name__:
             bgm = i.result()
@@ -135,6 +145,7 @@ def generate():
             img = i.result()
     if isinstance(img, tuple):
         logging.error(img[1][0], img[1][1])
+        return img[1][0], 400
 
     pic_comment = util.GPT4_pipline(img)
     logging.info('GPT4 comment: ' + pic_comment)
@@ -145,7 +156,18 @@ def generate():
         'bgm': bgm
     })
 
-app.register_blueprint(line)
 
 if __name__ == '__main__':
-    app.run('0.0.0.0')
+    try:
+        util.PORT = parser.parse_args().port
+        if parser.parse_args().host != 'localhost':
+            app.register_blueprint(line.line)
+            ngrok_connect = ngrok.connect(str(util.PORT), 'http')
+            line.ngrok_url = ngrok_connect.public_url
+            logging.info(f'public_url: {ngrok_connect.public_url}')
+        else:
+            logging.warning('Now using localhost as uri. So line bot won\'t activate.')
+        app.run(parser.parse_args().host, port=util.PORT)
+    except KeyboardInterrupt:
+        ngrok.kill()
+        exit(0)
