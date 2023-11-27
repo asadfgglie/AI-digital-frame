@@ -20,8 +20,8 @@ line = Blueprint('line', __name__, url_prefix='/line')
 
 
 # Please setup your line.json
-# channel_access_token: Messaging API設定 > channel access token
-# channel_secret:       チャネル基本設定   > channel secret token
+# channel_access_token: Messaging API 設定 > channel access token
+# channel_secret:       channel basic 設定 > channel secret token
 json_data = json.load(open('line.json', 'r'))
 line_bot_api = LineBotApi(json_data['channel_access_token'])
 handler = WebhookHandler(json_data['channel_secret'])
