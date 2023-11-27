@@ -38,6 +38,7 @@ from PIL import Image
 from flask import Flask, request, jsonify, render_template
 
 import util
+from line import line
 logging.info('Import done.')
 
 app = Flask(__name__)
@@ -135,6 +136,8 @@ def generate():
         'img': img,
         'bgm': bgm
     })
+
+app.register_blueprint(line)
 
 if __name__ == '__main__':
     app.run('0.0.0.0')
