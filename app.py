@@ -74,12 +74,20 @@ def generate():
     bgm_prompt: str = args.get('bgm_prompt', '')
 
     if image_prompt == '' and bgm_prompt == '' and util.config['now_prompt_style'] is not None:
+        style = None
         try:
             style = util.config["prompt_style"][util.config['now_prompt_style']]
-            image_prompt = style['image_prompt']
-            bgm_prompt = style['bgm_prompt']
+            logging.info('use prompt style: ' + util.config['now_prompt_style'])
         except:
             logging.info(f'Not find `{util.config["now_prompt_style"]}` prompt style.')
+        try:
+            image_prompt = style['image_prompt']
+        except:
+            logging.info(f'Not find `image_prompt` in `{util.config["now_prompt_style"]}` prompt style.')
+        try:
+            bgm_prompt = style['bgm_prompt']
+        except:
+            logging.info(f'Not find `bgm_prompt` in `{util.config["now_prompt_style"]}` prompt style.')
 
     if voice_prompt is not None:
         with open(util.VOICE_PROMPT, 'wb') as f:

@@ -46,11 +46,14 @@
   "music_model": "facebook/musicgen-melody",
   "BGM_duration": "5",
   "image_generate_api": "DALL-E",
-  "now_prompt_style": null,
+  "now_prompt_style": "Cute fox girl dall-e",
   "prompt_style": {
     "Cute fox girl": {
       "image_prompt": "blonde hair, long hair, fox ears, curled hair, fox girl, (fluffy tail), fat tail, hands on the ground, gold eyes, black irises, long eyelashes, thick eyelashes, looking at viewer, smile, (gold cheongsam), belt, [ornate clothes], black bowtie, white thighhighs, black stockings,",
       "bgm_prompt": "casual, light, relaxing, piano music, "
+    },
+    "Cute fox girl dall-e": {
+      "image_prompt": "All people are cute anime style girls who has long, and curled hair, and fluffy, fat fox tail, gold eyes. And their also ware Qipao as uniform. "
     }
   }
 }

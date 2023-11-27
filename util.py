@@ -168,29 +168,28 @@ def GPT4_pipline(img: str, voice_prompt: str=None):
             ],
             max_tokens = 1000
         ).choices[0].message.content
-        logging.info('GPT4: ' + response_message)
+        logging.debug('GPT4: ' + response_message)
         return response_message
 
 async def DALL_E_pipline(prompt: str, img: str):
-    sd_payload = copy.deepcopy(config['sd_payload'])
-    sd_payload['prompt'] = sd_payload['prompt'] + prompt
-    logging.info('dall-e prompt: ' + sd_payload['prompt'])
+    logging.info('dall-e prompt: ' + prompt)
 
     img = Image.open(io.BytesIO(base64.b64decode(img)))
     img.resize((min(*img.size), min(*img.size)))
     img_bytes = io.BytesIO()
     img.save(img_bytes, format='png')
 
-    t1 = time.time()
-    response = openai.OpenAI().images.generate(
-        model='dall-e-3',
-        prompt=sd_payload['prompt'],
-        n=1,
-        size='1792x1024',
-        response_format='b64_json'
-    )
-
+    response = None
     try:
+        t1 = time.time()
+        response = openai.OpenAI().images.generate(
+            model='dall-e-3',
+            prompt=prompt,
+            n=1,
+            size='1792x1024',
+            response_format='b64_json'
+        )
+
         logging.info('Image generated done. take {:.2f} sec.'.format(time.time() - t1))
         Image.open(io.BytesIO(base64.b64decode(response.data[0].b64_json))).save('./IMAGE_OUTPUT.png')
         return response.data[0].b64_json
