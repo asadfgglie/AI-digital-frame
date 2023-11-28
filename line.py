@@ -76,5 +76,5 @@ def handle_image_message(event):
     else:
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage('Error!\n```' + json.dumps(result.json(), indent=2) + '\n```')
+            TextSendMessage('Error!\n```json\n' + json.dumps(result.json(), indent=2) + '\n```')
         )

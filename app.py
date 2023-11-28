@@ -137,7 +137,7 @@ def generate():
         image_generate_pipline(image_prompt + interrogate_img_prompt + gpt4_reply["img_prompt"],
                                       img),
         util.music_gen_pipline(bgm_prompt + ('"' + voice_prompt + '", ' if voice_prompt is not None else '') + gpt4_reply["bgm_prompt"],
-                               util.VOICE_PROMPT
+                               util.VOICE_PROMPT if voice_prompt is not None else None
     )]))
     output_set: list[asyncio.Task] = list(output_set[0])
     bgm = None
@@ -148,8 +148,8 @@ def generate():
         elif i.get_coro().__name__ is image_generate_pipline.__name__:
             img = i.result()
     if isinstance(img, tuple):
-        logging.error(img[1][0], img[1][1])
-        return jsonify({'detail': str(img[1][1])}), 400
+        logging.error(img[1][0], str(img[1]))
+        return jsonify({'detail': str(img[1])}), 400
 
     pic_comment = util.GPT4_pipline(img)
     logging.info('GPT4 comment: ' + pic_comment)
