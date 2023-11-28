@@ -13,7 +13,7 @@ parser.add_argument('-l', '--logging-level',
 parser.add_argument('--env', '-e', action='store',
                     help='what `.env` file should be load.',
                     default=False)
-parser.add_argument('--host', '-h', action='store',
+parser.add_argument('--host', action='store',
                     help='start host', default='localhost')
 parser.add_argument('--port', '-p', action='store',
                     type=int, help='start post', default=5000)
