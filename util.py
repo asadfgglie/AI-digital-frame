@@ -21,6 +21,7 @@ CONFIG_FILE = './config.json'
 VOICE_PROMPT = './static/VOICE_PROMPT.wav'
 IMG_INPUT = './static/IMAGE_INPUT.png'
 IMG_OUTPUT = './static/IMAGE_OUTPUT.png'
+IMG_OUTPUT_PREVIEW = './static/IMAGE_OUTPUT_PREVIEW.png'
 BGM_OUTPUT = './static/BGM_OUTPUT.wav'
 PORT = 5000
 
@@ -60,7 +61,7 @@ async def music_gen_pipline(prompt: str, voice: str=None):
         logging.info('load ' + VOICE_PROMPT)
         melody, sr = torchaudio.load(VOICE_PROMPT)
         wav = music_model.generate_with_chroma([prompt], melody, sr, True)
-    audio_write(BGM_OUTPUT, wav.cpu()[0], music_model.sample_rate, strategy="loudness", loudness_compressor=True)
+    audio_write(BGM_OUTPUT[:-4], wav.cpu()[0], music_model.sample_rate, strategy="loudness", loudness_compressor=True)
     with open(BGM_OUTPUT, 'rb') as f:
         tmp = f.read()
     logging.info('Music generated done. take {:.2f} sec.'.format(time.time() - t1))

@@ -3,6 +3,7 @@ import json
 from typing import Optional
 
 import requests
+from PIL import Image
 from flask import Blueprint
 from flask import current_app
 from flask import request, abort
@@ -12,7 +13,6 @@ from linebot.models import (
     MessageEvent,
     ImageMessage, ImageSendMessage, TextSendMessage, AudioSendMessage)
 
-import app
 import util
 
 # ★★★
@@ -50,20 +50,31 @@ def handle_image_message(event):
     message_content = line_bot_api.get_message_content(event.message.id)
 
     # /generate
-    result: dict = requests.post(f'localhost:{util.PORT}/generate',
+    result = requests.post(f'http://localhost:{util.PORT}/generate',
                            json={
                                'img': base64.b64encode(message_content.content).decode('utf8')
                            }
-    ).json()
-
-    line_bot_api.reply_message(
-        event.reply_token,
-        [
-            ImageSendMessage(
-                original_content_url = ngrok_url + f"{util.IMG_OUTPUT[1:]}",
-                # preview_image_url = ngrok_url + "/static/" + preview_encoded_url + ".png"
-            ),
-            TextSendMessage(result['img_comment'] + '\n\n - by ChatGPT4'),
-            AudioSendMessage(ngrok_url + f"{util.BGM_OUTPUT[1:]}", int(util.config["BGM_duration"]))
-        ]
     )
+
+    if result.status_code == 200:
+        preview = Image.open(util.IMG_OUTPUT)
+        preview.resize((preview.size[0]//5, preview.size[1]//5))
+        preview.save(util.IMG_OUTPUT_PREVIEW, format='png')
+
+        result = result.json()
+        line_bot_api.reply_message(
+            event.reply_token,
+            [
+                ImageSendMessage(
+                    original_content_url = ngrok_url + f"{util.IMG_OUTPUT[1:]}",
+                    preview_image_url = ngrok_url + f"{util.IMG_OUTPUT_PREVIEW[1:]}"
+                ),
+                TextSendMessage(result['img_comment'] + '\n\n - by ChatGPT4'),
+                AudioSendMessage(ngrok_url + f"{util.BGM_OUTPUT[1:]}", int(util.config["BGM_duration"]))
+            ]
+        )
+    else:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage('Error!\n```' + json.dumps(result.json(), indent=2) + '\n```')
+        )

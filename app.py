@@ -79,8 +79,8 @@ def generate():
     try:
         Image.open(io.BytesIO(base64.b64decode(img))).save(util.IMG_INPUT)
     except:
-        return 'need img as input!', 400
-    voice_prompt: str = args.get('voice', None)
+        return jsonify({'detail':'need img as input!'}), 400
+    voice_prompt: Optional[str] = args.get('voice', None)
     image_prompt: str = args.get('image_prompt', '')
     bgm_prompt: str = args.get('bgm_prompt', '')
 
@@ -106,6 +106,8 @@ def generate():
             f.write(base64.b64decode(voice_prompt))
         voice_prompt = util.whisper_model.transcribe(util.VOICE_PROMPT)["text"]
         logging.info('transcribe voice: ' + voice_prompt)
+    else:
+        voice_prompt = ''
 
     image_generate_pipline = None
     interrogate_img_prompt: str = ''
@@ -127,6 +129,8 @@ def generate():
     logging.info(f'Image api: {image_generate_pipline.__name__}')
 
     gpt4_reply = util.GPT4_pipline(img, voice_prompt)
+    if voice_prompt == '':
+        voice_prompt = None
     logging.info('gpt4_reply: ' + str(gpt4_reply))
 
     output_set: tuple[set[asyncio.Task], set] = asyncio.run(asyncio.wait([
@@ -145,7 +149,7 @@ def generate():
             img = i.result()
     if isinstance(img, tuple):
         logging.error(img[1][0], img[1][1])
-        return img[1][0], 400
+        return jsonify({'detail': str(img[1][1])}), 400
 
     pic_comment = util.GPT4_pipline(img)
     logging.info('GPT4 comment: ' + pic_comment)

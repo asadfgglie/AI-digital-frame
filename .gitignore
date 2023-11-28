@@ -7,3 +7,5 @@ __pycache__
 test*
 dev.env
 IMAGE_INPUT.png
+line.json
+IMAGE_OUTPUT_PREVIEW.png
