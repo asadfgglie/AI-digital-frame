@@ -162,16 +162,32 @@ def generate():
     })
 
 @app.after_request
-def clear_prompt():
-    if parser.parse_args().logging_level.upper() != logging.DEBUG:
+def log_prompt():
+    time_stmp = f'./log/{time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime(time.time()))}/'
+
+    try:
+        os.makedirs(time_stmp)
+    except:
+        i = 1
+        while True:
+            try:
+                time_stmp += f'({i})'
+                os.makedirs(time_stmp)
+                break
+            except:
+                i += 1
+
+    def log(name: str):
         try:
-            os.remove(util.VOICE_PROMPT)
+            os.rename(name, time_stmp + name[2:])
+            os.remove(name)
         except FileNotFoundError:
             pass
-        try:
-            os.remove(util.IMG_INPUT)
-        except FileNotFoundError:
-            pass
+
+    log(util.VOICE_PROMPT)
+    log(util.IMG_INPUT)
+    log(util.IMG_OUTPUT)
+    log(util.BGM_OUTPUT)
 
 if __name__ == '__main__':
     try:
