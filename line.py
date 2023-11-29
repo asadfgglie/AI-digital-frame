@@ -1,6 +1,7 @@
 import base64
 import json
 from typing import Optional
+from pydub import AudioSegment
 
 import requests
 from PIL import Image
@@ -61,6 +62,8 @@ def handle_image_message(event):
         preview.resize((preview.size[0]//5, preview.size[1]//5))
         preview.save(util.IMG_OUTPUT_PREVIEW, format='png')
 
+        AudioSegment.from_wav(util.BGM_OUTPUT).export(util.BGM_OUTPUT[:-4] + '.mp3', format='mp3')
+
         result = result.json()
         line_bot_api.reply_message(
             event.reply_token,
@@ -70,7 +73,7 @@ def handle_image_message(event):
                     preview_image_url = ngrok_url + f"{util.IMG_OUTPUT_PREVIEW[1:]}"
                 ),
                 TextSendMessage(result['img_comment'] + '\n\n - by ChatGPT4'),
-                AudioSendMessage(ngrok_url + f"{util.BGM_OUTPUT[1:]}", int(util.config["BGM_duration"]))
+                AudioSendMessage(ngrok_url + f"{util.BGM_OUTPUT[1: -4]}.mp3", int(util.config["BGM_duration"]))
             ]
         )
     else:

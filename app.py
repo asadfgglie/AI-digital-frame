@@ -1,4 +1,5 @@
 import argparse
+import json
 import os.path
 
 parser = argparse.ArgumentParser(
@@ -149,7 +150,7 @@ def generate():
             img = i.result()
     if isinstance(img, tuple):
         logging.error(img[1][0], str(img[1]))
-        return jsonify({'detail': str(img[1])}), 400
+        return jsonify({'detail': json.dumps(img[1], indent=2)}), 400
 
     pic_comment = util.GPT4_pipline(img)
     logging.info('GPT4 comment: ' + pic_comment)
@@ -168,7 +169,7 @@ if __name__ == '__main__':
             app.register_blueprint(line.line)
             ngrok_connect = ngrok.connect(str(util.PORT), 'http')
             line.ngrok_url = ngrok_connect.public_url
-            logging.info(f'public_url: {ngrok_connect.public_url}')
+            logging.info(f'line-bot webhook public url: {ngrok_connect.public_url}/line/callback')
         else:
             logging.warning('Now using localhost as uri. So line bot won\'t activate.')
         app.run(parser.parse_args().host, port=util.PORT)

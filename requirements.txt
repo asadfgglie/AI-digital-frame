@@ -9,3 +9,4 @@ torchaudio~=2.0.1+cu117
 line-bot-sdk~=3.5.1
 pyngrok~=7.0.1
 pydantic==1.10.13
+pydub~=0.25.1

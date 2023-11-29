@@ -1,6 +1,7 @@
 venv
 VOICE_PROMPT.wav
 BGM_OUTPUT.wav
+BGM_OUTPUT.mp3
 IMAGE_OUTPUT.png
 .idea
 __pycache__
