@@ -18,8 +18,8 @@ from audiocraft.data.audio import audio_write
 from audiocraft.models import MusicGen
 
 CONFIG_FILE = './config.json'
-VOICE_PROMPT = './static/VOICE_PROMPT.wav'
-IMG_INPUT = './static/IMAGE_INPUT.png'
+VOICE_PROMPT = './VOICE_PROMPT.wav'
+IMG_INPUT = './IMAGE_INPUT.png'
 IMG_OUTPUT = './static/IMAGE_OUTPUT.png'
 IMG_OUTPUT_PREVIEW = './static/IMAGE_OUTPUT_PREVIEW.png'
 BGM_OUTPUT = './static/BGM_OUTPUT.wav'

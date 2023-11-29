@@ -59,7 +59,7 @@ def handle_image_message(event):
 
     if result.status_code == 200:
         preview = Image.open(util.IMG_OUTPUT)
-        preview.resize((preview.size[0]//5, preview.size[1]//5))
+        preview = preview.resize((preview.size[0]//2, preview.size[1]//2))
         preview.save(util.IMG_OUTPUT_PREVIEW, format='png')
 
         AudioSegment.from_wav(util.BGM_OUTPUT).export(util.BGM_OUTPUT[:-4] + '.mp3', format='mp3')

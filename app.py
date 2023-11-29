@@ -161,6 +161,17 @@ def generate():
         'bgm': bgm
     })
 
+@app.after_request
+def clear_prompt():
+    if parser.parse_args().logging_level.upper() != logging.DEBUG:
+        try:
+            os.remove(util.VOICE_PROMPT)
+        except FileNotFoundError:
+            pass
+        try:
+            os.remove(util.IMG_INPUT)
+        except FileNotFoundError:
+            pass
 
 if __name__ == '__main__':
     try:
