@@ -4,9 +4,10 @@
 1. install requirements. Note: when you install torch, make sure you install correct cuda version.
 2. go to `config.json` to set `openai` => `api_key`
 3. make sure you have start [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) and has start flag `--api`
-4. start server
+4. if you wanna use line bot function, don't forget install `ffmpeg`
+5. start server
 ```commandline
-python app.py [--logging-level {CRITICAL,FATAL,ERROR,WARN,WARNING,INFO,DEBUG,NOTSET,critical,fatal,error,warn,warning,info,debug,notset}] [--env] [-h]
+python app.py [-h] [-l {CRITICAL,FATAL,ERROR,WARN,WARNING,INFO,DEBUG,NOTSET,critical,fatal,error,warn,warning,info,debug,notset}] [--env ENV] [--host HOST] [--port PORT]
 ```
 
 ## code
