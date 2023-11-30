@@ -1,5 +1,4 @@
 import argparse
-import json
 import os.path
 
 parser = argparse.ArgumentParser(
@@ -43,7 +42,7 @@ import asyncio
 import base64
 from PIL import Image
 
-from flask import Flask, request, jsonify, render_template, Response
+from flask import Flask, request, jsonify, render_template
 
 import util
 import line
@@ -53,7 +52,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', raspberrypi_url=str(util.config['raspberrypi_server']))
 
 @app.route('/config', methods=['GET', 'POST'])
 def config():
@@ -65,6 +64,11 @@ def config():
             args.update(request.json)
         util.save_config(args)
         return jsonify(util.config)
+
+@app.route('/raspberrypi_url', methods=['POST'])
+def raspberrypi_url():
+    util.save_config("raspberrypi_server", request.values['raspberrypi_url'])
+    return render_template('index.html', raspberrypi_url=util.config['raspberrypi_server'])
 
 @app.route('/generate', methods=['POST'])
 def generate():

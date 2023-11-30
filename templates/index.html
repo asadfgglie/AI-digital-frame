@@ -6,6 +6,15 @@
     </head>
     <body>
         <h1>This is AI digital frame backend server.</h1>
+        <h2>Please input raspberrypi server url in the here to make this server can connect to raspberrypi.</h2>
+        <form action={{url_for('raspberrypi_url')}} method="post">
+          <label for="raspberrypi_url">Raspberrypi server url:</label>
+          <input type="url" id="raspberrypi_url" name="raspberrypi_url">
+          <input type="submit" value="Submit">
+        </form>
+        {% if raspberrypi_url != undefined %}
+        <h2>Raspberrypi server url: {{ raspberrypi_url }}</h2>
+        {% endif %}
         <h2>API doc:</h2>
         <ol>
           <li>/: GET</li>
