@@ -42,7 +42,7 @@ import asyncio
 import base64
 from PIL import Image
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect
 
 import util
 import line
@@ -52,7 +52,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html', raspberrypi_url=str(util.config['raspberrypi_server']))
+    return render_template('index.html', raspberrypi_url=util.config['raspberrypi_server'])
 
 @app.route('/config', methods=['GET', 'POST'])
 def config():
@@ -68,7 +68,7 @@ def config():
 @app.route('/raspberrypi_url', methods=['POST'])
 def raspberrypi_url():
     util.save_config("raspberrypi_server", request.values['raspberrypi_url'])
-    return render_template('index.html', raspberrypi_url=util.config['raspberrypi_server'])
+    return redirect('/')
 
 @app.route('/generate', methods=['POST'])
 def generate():
