@@ -54,6 +54,30 @@
     },
     "Cute fox girl dall-e": {
       "image_prompt": "All people are cute anime style girls who has long, and curled hair, and fluffy, fat fox tail, gold eyes. And their also ware Qipao as uniform. "
+    },
+    "animals in fantasy dall-e": {
+      "image_prompt": "fantasy scene, Impressionist landscape of a Japanese garden in winter, Cheerful Dogs and Cats is playing in snowing scene,",
+      "bgm_prompt": "orchestra, piano music, fantasy, "
+    },
+    "jazz abstract painting dall-e": {
+      "image_prompt": "Abstract painting, representing the sound of jazz music, using vibrant colors and erratic shapes",
+      "bgm_prompt": "casual, jazz music, "
+    },
+    "Nouveau painting dall-e": {
+      "image_prompt": "Art Nouveau painting of a female botanist surrounded by exotic plants in a greenhouse",
+      "bgm_prompt": "piano music, classical, "
+    },
+    "Underwater photography dall-e": {
+      "image_prompt": "Underwater photography of a coral reef, with diverse marine life and a scuba diver for scale",
+      "bgm_prompt": "casual, slow music, "
+    },
+    "starry sky dall-e": {
+      "image_prompt": "Long-exposure night photography of a starry sky over a mountain range, with light trails.",
+      "bgm_prompt": "Songs for the Planetarium, relaxing music, "
+    },
+    "game style pixel art dall-e": {
+      "image_prompt": "Pixel art of an 8-bit video game character running through a retro platformer level.",
+      "bgm_prompt": "retro game music, pop music, "
     }
   },
   "raspberrypi_server": null
