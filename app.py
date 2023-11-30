@@ -155,43 +155,36 @@ def generate():
     pic_comment = util.GPT4_pipline(img)
     logging.info('GPT4 comment: ' + pic_comment)
 
-    util.is_generate = True
+    time_stmp = f'./log/{time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime(time.time()))}/'
+
+    try:
+        os.makedirs(time_stmp)
+    except:
+        i = 1
+        while True:
+            try:
+                time_stmp += f'({i})'
+                os.makedirs(time_stmp)
+                break
+            except:
+                i += 1
+
+    def log(name: str):
+        try:
+            os.rename(name, time_stmp + name[2:])
+        except FileNotFoundError:
+            pass
+
+    log(util.VOICE_PROMPT)
+    log(util.IMG_INPUT)
+    log(util.IMG_OUTPUT)
+    log(util.BGM_OUTPUT)
 
     return jsonify({
         'img_comment': pic_comment,
         'img': img,
         'bgm': bgm
     })
-
-@app.after_request
-def log_prompt(_response):
-    if util.is_generate:
-        time_stmp = f'./log/{time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime(time.time()))}/'
-
-        try:
-            os.makedirs(time_stmp)
-        except:
-            i = 1
-            while True:
-                try:
-                    time_stmp += f'({i})'
-                    os.makedirs(time_stmp)
-                    break
-                except:
-                    i += 1
-
-        def log(name: str):
-            try:
-                os.rename(name, time_stmp + name[2:])
-            except FileNotFoundError:
-                pass
-
-        log(util.VOICE_PROMPT)
-        log(util.IMG_INPUT)
-        log(util.IMG_OUTPUT)
-        log(util.BGM_OUTPUT)
-
-        util.is_generate = False
 
 if __name__ == '__main__':
     try:

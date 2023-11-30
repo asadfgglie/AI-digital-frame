@@ -25,7 +25,6 @@ IMG_OUTPUT_PREVIEW = './static/IMAGE_OUTPUT_PREVIEW.png'
 BGM_OUTPUT = './static/BGM_OUTPUT.wav'
 PORT = 5000
 
-is_generate = False
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
