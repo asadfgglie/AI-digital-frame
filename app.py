@@ -150,7 +150,7 @@ def generate():
             img = i.result()
     if isinstance(img, tuple):
         logging.error(img[1][0], str(img[1]))
-        return jsonify({'detail': json.dumps(img[1], indent=2)}), 400
+        return jsonify({'detail': str(img[1])}), 400
 
     pic_comment = util.GPT4_pipline(img)
     logging.info('GPT4 comment: ' + pic_comment)
@@ -171,7 +171,9 @@ def generate():
 
     def log(name: str):
         try:
-            os.rename(name, time_stmp + name[2:])
+            with open(time_stmp + name.split('/')[-1], 'wb') as f:
+                with open(name, 'rb') as l:
+                    f.write(l.read())
         except FileNotFoundError:
             pass
 

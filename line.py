@@ -65,6 +65,7 @@ def handle_image_message(event):
         AudioSegment.from_wav(util.BGM_OUTPUT).export(util.BGM_OUTPUT[:-4] + '.mp3', format='mp3')
 
         result = result.json()
+        raspberrypi_result = requests.post(util.config['raspberrypi_server'] + '/line_get_generate', json=result.json())
         line_bot_api.reply_message(
             event.reply_token,
             [
@@ -76,6 +77,7 @@ def handle_image_message(event):
                 AudioSendMessage(ngrok_url + f"{util.BGM_OUTPUT[1: -4]}.mp3", int(util.config["BGM_duration"]))
             ]
         )
+
     else:
         line_bot_api.reply_message(
             event.reply_token,
