@@ -180,7 +180,6 @@ def log_prompt():
     def log(name: str):
         try:
             os.rename(name, time_stmp + name[2:])
-            os.remove(name)
         except FileNotFoundError:
             pass
 
