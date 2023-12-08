@@ -182,7 +182,8 @@ def generate():
         except FileNotFoundError:
             pass
 
-    log(util.VOICE_PROMPT)
+    if voice_prompt is not None:
+        log(util.VOICE_PROMPT)
     log(util.IMG_INPUT)
     log(util.IMG_OUTPUT)
     log(util.BGM_OUTPUT)
