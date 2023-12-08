@@ -44,7 +44,7 @@
   },
   "whisper_model": "tiny",
   "music_model": "facebook/musicgen-melody",
-  "BGM_duration": "5",
+  "BGM_duration": 15,
   "image_generate_api": "dall-e",
   "now_prompt_style": "Cute fox girl dall-e",
   "prompt_style": {
@@ -80,5 +80,5 @@
       "bgm_prompt": "retro game music, pop music, "
     }
   },
-  "raspberrypi_server": null
+  "raspberrypi_server": "http://172.20.10.14:5000"
 }
