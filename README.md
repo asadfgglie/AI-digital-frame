@@ -3,7 +3,7 @@
 ## start
 1. install requirements. Note: when you install torch, make sure you install correct cuda version.
 2. go to `config.json` to set `openai` => `api_key`
-3. make sure you have start [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) and has start flag `--api`
+3. (**Optional**) if you wanna use stable diffusion as img generation api, make sure you have start [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) and has start flag `--api`. And then go to `config.json` change `"image_generate_api": "dall-e"` as `"image_generate_api": "sd"`.
 4. if you wanna use line bot function, don't forget install `ffmpeg`
 5. start server
 ```commandline
