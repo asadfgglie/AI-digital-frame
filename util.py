@@ -16,6 +16,7 @@ import whisper
 from PIL import Image
 from audiocraft.data.audio import audio_write
 from audiocraft.models import MusicGen
+import numpy as np
 
 CONFIG_FILE = './config.json'
 VOICE_PROMPT = './VOICE_PROMPT.wav'
@@ -23,6 +24,7 @@ IMG_INPUT = './IMAGE_INPUT.png'
 IMG_OUTPUT = './static/IMAGE_OUTPUT.png'
 IMG_OUTPUT_PREVIEW = './static/IMAGE_OUTPUT_PREVIEW.png'
 BGM_OUTPUT = './static/BGM_OUTPUT.wav'
+RANDOM_PROMPT_STYLE = 'random'
 PORT = 5000
 
 
@@ -233,17 +235,19 @@ def save_config(key: Union[str, dict], value=None):
     global music_model, whisper_model
     if isinstance(key, str):
         tmp_dict = {key: copy.deepcopy(value)}
-        if isinstance(value, dict) and isinstance(config[key], dict):
-            config[key].update(value)
-        else:
-            config[key] = value
     else:
         tmp_dict = copy.deepcopy(key)
-        for k, v in key.items():
-            if isinstance(v , dict):
-                config[k].update(v)
-            else:
-                config[k] = v
+    for k, v in tmp_dict.items():
+        if isinstance(v , dict):
+            if k == 'prompt_style':
+                if RANDOM_PROMPT_STYLE in v.keys():
+                    v.pop(RANDOM_PROMPT_STYLE)
+                for vk in v.keys():
+                    if v[vk].get('random_weight') is None:
+                        v[vk]['weight'] = 0
+            config[k].update(v)
+        else:
+            config[k] = v
 
     with open(CONFIG_FILE, 'w') as f:
         f.write(json.dumps(config, indent=2))
@@ -268,3 +272,8 @@ def save_config(key: Union[str, dict], value=None):
 
     if 'openai' in key and tmp_dict.get('openai', dict()).get('api_key', False):
         openai.api_key = config['openai']['api_key']
+
+def softmax(x) -> np.ndarray:
+    y = np.exp(x - np.max(x))
+    f_x = y / np.sum(np.exp(x))
+    return f_x

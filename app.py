@@ -24,6 +24,9 @@ logging.info('Importing...')
 
 from typing import Optional
 import json
+import random
+
+import numpy as np
 
 from pyngrok import ngrok
 if parser.parse_args().env:
@@ -89,21 +92,28 @@ def generate():
     image_prompt: str = args.get('image_prompt', '')
     bgm_prompt: str = args.get('bgm_prompt', '')
 
+    style = None
     if image_prompt == '' and bgm_prompt == '' and util.config['now_prompt_style'] is not None:
-        style = None
-        try:
-            style = util.config["prompt_style"][util.config['now_prompt_style']]
+        if util.config['now_prompt_style'] == util.RANDOM_PROMPT_STYLE:
             logging.info('use prompt style: ' + util.config['now_prompt_style'])
-        except:
-            logging.info(f'Not find `{util.config["now_prompt_style"]}` prompt style.')
+            style_list = list(util.config["prompt_style"].keys())
+            weight = util.softmax(np.array([v['random_weight'] for v in util.config["prompt_style"].values()])).tolist()
+            style = random.choices(style_list, weight)[0]
+            logging.info('random prompt style: ' + style)
+        else:
+            try:
+                style = util.config["prompt_style"][util.config['now_prompt_style']]
+                logging.info('use prompt style: ' + util.config['now_prompt_style'])
+            except:
+                logging.info(f'Not find `{util.config["now_prompt_style"]}` prompt style.')
         try:
-            image_prompt = style['image_prompt']
+            image_prompt = util.config["prompt_style"][style]['image_prompt']
         except:
-            logging.info(f'Not find `image_prompt` in `{util.config["now_prompt_style"]}` prompt style.')
+            logging.info(f'Not find `image_prompt` in `{style}` prompt style.')
         try:
-            bgm_prompt = style['bgm_prompt']
+            bgm_prompt = util.config["prompt_style"][style]['bgm_prompt']
         except:
-            logging.info(f'Not find `bgm_prompt` in `{util.config["now_prompt_style"]}` prompt style.')
+            logging.info(f'Not find `bgm_prompt` in `{style}` prompt style.')
 
     if voice_prompt is not None:
         with open(util.VOICE_PROMPT, 'wb') as f:
@@ -193,7 +203,7 @@ def generate():
         'img_prompt': image_prompt + interrogate_img_prompt + gpt4_reply["img_prompt"],
         'bgm_prompt': bgm_prompt + ('"' + voice_prompt + '", ' if voice_prompt is not None else '') + gpt4_reply["bgm_prompt"],
         'now_prompt_style': util.config['now_prompt_style'],
-        "prompt_style": util.config["prompt_style"][util.config['now_prompt_style']]
+        "prompt_style": style
     }
     with open(log_path + 'info.json', 'w') as f:
         f.write(json.dumps(info_json, indent=2))
