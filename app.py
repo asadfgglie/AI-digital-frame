@@ -18,6 +18,9 @@ parser.add_argument('--host', action='store',
 parser.add_argument('--port', '-p', action='store',
                     type=int, help='start post', default=5000)
 
+parser.add_argument('--ngrok', '-nk', action='store_true',
+                    help='whether use ngrok or not.')
+
 import logging
 logging.basicConfig(level=parser.parse_args().logging_level.upper(), format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logging.info('Importing...')
@@ -220,9 +223,13 @@ if __name__ == '__main__':
         util.PORT = parser.parse_args().port
         if parser.parse_args().host != 'localhost':
             app.register_blueprint(line.line)
-            ngrok_connect = ngrok.connect(str(util.PORT), 'http')
-            line.ngrok_url = ngrok_connect.public_url
-            logging.info(f'line-bot webhook public url: {ngrok_connect.public_url}/line/callback')
+            if parser.parse_args().ngrok:
+                ngrok_connect = ngrok.connect(str(util.PORT), 'http')
+                line.ngrok_url = ngrok_connect.public_url
+                logging.info(f'line-bot webhook public url: {ngrok_connect.public_url}/line/callback')
+            else:
+                line.ngrok_url = parser.parse_args().host
+                logging.info(f'line-bot webhook public url: {line.ngrok_url}/line/callback')
         else:
             logging.warning('Now using localhost as uri. So line bot won\'t activate.')
         app.run(parser.parse_args().host, port=util.PORT)
