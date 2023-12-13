@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import time
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import openai
@@ -226,7 +226,7 @@ def stable_diffusion_pipline(prompt: str, img: str):
     else:
         return 'stable diffusion error!', response
 
-def save_config(key: Optional[str, dict]=None, value=None):
+def save_config(key: Union[str, dict, None]=None, value=None):
     """
     save config and reload model if necessary
     :param key: `dict` or `str`. `dict` will update config by `dict`, `str` will update config by key-value pair
