@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import time
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 import openai
