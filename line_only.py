@@ -81,6 +81,30 @@ def handle_text_message(event):
                 event.reply_token,
                 TextSendMessage(text = switched_to))
 
+    elif message_content[0:5] == 'card:':
+        prompt_style_title = message_content[5:]
+
+        logging.info('Load config...')
+        with open(CONFIG_FILE, 'r') as f:
+            config: dict = json.loads(f.read())
+
+        logging.info('Update now_prompt_style in config...')
+        config['now_prompt_style'] = prompt_style_title
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config, f, indent=2)
+
+        reply_message = 'Your prompt style was changed to\n"' + prompt_style_title + '"\n\n'
+        reply_message += 'Prompt style detail'
+        if config['prompt_style'][prompt_style_title]['image_prompt']:
+            reply_message += '\n\nImage prompt:\n'
+            reply_message += config['prompt_style'][prompt_style_title]['image_prompt']
+        if config['prompt_style'][prompt_style_title]['bgm_prompt']:
+            reply_message += '\n\nBgm prompt:\n'
+            reply_message += config['prompt_style'][prompt_style_title]['bgm_prompt']
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text = reply_message))
 
 
 @handler.add(MessageEvent, message=ImageMessage)
