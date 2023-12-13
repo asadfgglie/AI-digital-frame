@@ -88,5 +88,6 @@
       "random_weight": 0
     }
   },
-  "raspberrypi_server": "http://172.20.10.14:5000"
+  "raspberrypi_server": "http://172.20.10.14:5000",
+  "NFT_wallet_address": "0xf9C74b803a81Ee61e05A898fe8B6c3597CdbBd90"
 }

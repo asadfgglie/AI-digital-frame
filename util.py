@@ -6,8 +6,9 @@ import json
 import logging
 import os
 import time
-from typing import Union
+from typing import Optional
 
+import numpy as np
 import openai
 import requests
 import torch.cuda
@@ -16,7 +17,6 @@ import whisper
 from PIL import Image
 from audiocraft.data.audio import audio_write
 from audiocraft.models import MusicGen
-import numpy as np
 
 CONFIG_FILE = './config.json'
 VOICE_PROMPT = './VOICE_PROMPT.wav'
@@ -226,28 +226,32 @@ def stable_diffusion_pipline(prompt: str, img: str):
     else:
         return 'stable diffusion error!', response
 
-def save_config(key: Union[str, dict], value=None):
+def save_config(key: Optional[str, dict]=None, value=None):
     """
     save config and reload model if necessary
     :param key: `dict` or `str`. `dict` will update config by `dict`, `str` will update config by key-value pair
     :param value: only work if `key` is `str`
     """
     global music_model, whisper_model
-    if isinstance(key, str):
-        tmp_dict = {key: copy.deepcopy(value)}
-    else:
-        tmp_dict = copy.deepcopy(key)
-    for k, v in tmp_dict.items():
-        if isinstance(v , dict):
-            if k == 'prompt_style':
-                if RANDOM_PROMPT_STYLE in v.keys():
-                    v.pop(RANDOM_PROMPT_STYLE)
-                for vk in v.keys():
-                    if v[vk].get('random_weight') is None:
-                        v[vk]['weight'] = 0
-            config[k].update(v)
+    tmp_dict = dict()
+    if key is not None:
+        if isinstance(key, str):
+            tmp_dict = {key: copy.deepcopy(value)}
         else:
-            config[k] = v
+            tmp_dict = copy.deepcopy(key)
+        for k, v in tmp_dict.items():
+            if isinstance(v , dict):
+                if k == 'prompt_style':
+                    if RANDOM_PROMPT_STYLE in v.keys():
+                        v.pop(RANDOM_PROMPT_STYLE)
+                    for vk in v.keys():
+                        if v[vk].get('random_weight') is None:
+                            v[vk]['weight'] = 0
+                config[k].update(v)
+            else:
+                config[k] = v
+    else:
+        key = ''
 
     with open(CONFIG_FILE, 'w') as f:
         f.write(json.dumps(config, indent=2))

@@ -76,20 +76,24 @@ def handle_image_message(event):
 
         text = result['img_comment'] + '\n\n - by ChatGPT4'
 
+        text += '\n\n' + ("AI artwork has been uploaded on OpenSea!\n" + result["info"]["os_url"]) if result["info"].get("os_url", False) else 'Oops! Can\'t upload AI artwork on OpenSea!'
+
         if raspberrypi_result is None or raspberrypi_result.status_code != 200:
             text += f"\nCan't connect to raspberrypi! Set up in config or go to {ngrok_url} to set up!"
+
+        original_img_url = result['info'].get('image', f"{ngrok_url}{log_path[1:]}{util.IMG_OUTPUT[8:]}")
+        original_bgm_url = result['info'].get('animation_url', f"{ngrok_url}{log_path[1:]}{util.BGM_OUTPUT[8: -4]}.mp3")
         line_bot_api.reply_message(
             event.reply_token,
             [
                 ImageSendMessage(
-                    original_content_url =f"{ngrok_url}{log_path[1:]}{util.IMG_OUTPUT[8:]}",
-                    preview_image_url = f"{ngrok_url}{log_path[1:]}{util.IMG_OUTPUT_PREVIEW[8:]}"
+                    original_content_url=original_img_url,
+                    preview_image_url=f"{ngrok_url}{log_path[1:]}{util.IMG_OUTPUT_PREVIEW[8:]}"
                 ),
                 TextSendMessage(text),
-                AudioSendMessage(f"{ngrok_url}{log_path[1:]}{util.BGM_OUTPUT[8: -4]}.mp3", int(util.config["BGM_duration"]))
+                AudioSendMessage(original_bgm_url, int(util.config["BGM_duration"]))
             ]
         )
-
     else:
         line_bot_api.reply_message(
             event.reply_token,

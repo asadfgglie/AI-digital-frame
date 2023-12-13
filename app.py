@@ -76,6 +76,30 @@ def raspberrypi_url():
     util.save_config("raspberrypi_server", request.values['raspberrypi_url'])
     return redirect('/')
 
+@app.route('/comment', methods=['POST'])
+def comment():
+    if not request.is_json:
+        return jsonify({
+            'detail': 'need json format data as input!'
+        }), 400
+    data = request.json
+    try:
+        path = f"./static/log/{data['time_stmp']}/info.json"
+        score = data['score']
+    except Exception as e:
+        return jsonify({
+            'detail': str(e.args)
+        }), 400
+
+    with open(path, 'r') as f:
+        prompt_style = json.loads(f.read())['prompt_style']
+    util.config['prompt_style'].get(prompt_style, {"random_weight": 0})["random_weight"] += score
+    util.save_config()
+
+    return jsonify({
+        k: util.config["prompt_style"][k]['random_weight'] for k in util.config["prompt_style"].keys()
+    })
+
 @app.route('/generate', methods=['POST'])
 def generate():
     """
@@ -206,16 +230,43 @@ def generate():
         'img_prompt': image_prompt + interrogate_img_prompt + gpt4_reply["img_prompt"],
         'bgm_prompt': bgm_prompt + ('"' + voice_prompt + '", ' if voice_prompt is not None else '') + gpt4_reply["bgm_prompt"],
         'now_prompt_style': util.config['now_prompt_style'],
-        "prompt_style": style
+        "prompt_style": style,
     }
     with open(log_path + 'info.json', 'w') as f:
         f.write(json.dumps(info_json, indent=2))
+
+    try:
+        title = pic_comment.find('"')
+        title = title, pic_comment.find('"', title+1)
+        title = pic_comment[title[0]+1: title[1]]
+    except:
+        title = pic_comment.split('\n')[0]
+
+    try:
+        nft_response = requests.post('https://artframe.kjchen.cloud/genNFT', json={
+            "name": title,  # NFT title
+            "to": util.config['NFT_wallet_address'],  # 鑄造出來的 NFT 要傳送到哪個錢包地址（不知道怎麼填就填一樣就好）
+            "image": img,
+            "description": pic_comment, # NFT 介紹
+            "animation_url": bgm,  # NFT 音檔
+            "attributes": [info_json]
+        })
+        if nft_response.status_code == 200:
+            nft_response = dict(nft_response.json())
+            nft_response.pop("to")
+            nft_response.pop("description")
+            nft_response.pop("attributes")
+
+            info_json.update(nft_response)
+    except Exception as e:
+        logging.error("Can't upload artwork onto nft!", e)
 
     return jsonify({
         'img_comment': pic_comment,
         'img': img,
         'bgm': bgm,
-        'time_stmp': time_stmp
+        'time_stmp': time_stmp,
+        'info': info_json
     })
 
 if __name__ == '__main__':
