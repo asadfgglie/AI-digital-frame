@@ -1,3 +1,5 @@
+CONFIG_FILE = './config.json'
+
 import base64
 import json
 import logging
@@ -13,11 +15,20 @@ from linebot import (LineBotApi, WebhookHandler)
 from linebot.exceptions import (InvalidSignatureError)
 from linebot.models import (
     MessageEvent,
-    ImageMessage, ImageSendMessage, TextSendMessage, AudioSendMessage)
+    ImageMessage, ImageSendMessage,
+    TextMessage, TextSendMessage,
+    AudioSendMessage)
 
-import util
+# import util
+IMAGE_GENERATE_API = {
+    'sd': ['sd', 'stable diffusion', 'stable_diffusion'],
+    'dall-e': ['dall-e', 'dall-e2', 'dall-e-v2']
+}
+# line = Blueprint('line', __name__, url_prefix='/line')
 
-line = Blueprint('line', __name__, url_prefix='/line')
+from flask import Flask
+from argparse import ArgumentParser
+app = Flask(__name__)
 
 
 # Please set up your line.json
@@ -28,7 +39,8 @@ line_bot_api = LineBotApi(json_data['channel_access_token'])
 handler = WebhookHandler(json_data['channel_secret'])
 ngrok_url: Optional[str] = None
 
-@line.route("/callback", methods=['POST'])
+# @line.route("/callback", methods=['POST'])
+@app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
 
@@ -41,6 +53,35 @@ def callback():
         abort(400)
 
     return 'OK'
+
+
+@handler.add(MessageEvent, message=TextMessage)
+def handle_text_message(event):
+    message_content = event.message.text
+    if message_content == 'SwitchAiApi':
+        logging.info('Load config...')
+
+        with open(CONFIG_FILE, 'r') as f:
+            config: dict = json.loads(f.read())
+
+        current_api = config['image_generate_api']
+        switched_to = 'Switched to '
+
+        if current_api in IMAGE_GENERATE_API['sd']:
+            switched_to += 'DALL-E'
+            config['image_generate_api'] = 'dall-e'
+        elif current_api in IMAGE_GENERATE_API['dall-e']:
+            switched_to += 'stable diffusion'
+            config['image_generate_api'] = 'sd'
+
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config, f, indent=2)
+
+        line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text = switched_to))
+
+
 
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event):
@@ -93,3 +134,16 @@ def handle_image_message(event):
             event.reply_token,
             TextSendMessage('Error!\n```json\n' + json.dumps(result.json(), indent=2) + '\n```')
         )
+
+
+
+if __name__ == "__main__":
+    arg_parser = ArgumentParser(
+        usage='Usage: python ' + __file__ + ' [--port <port>] [--help]'
+    )
+    arg_parser.add_argument('-p', '--port', type=int,
+                            default=8000, help='port')
+    arg_parser.add_argument('-d', '--debug', default=False, help='debug')
+    options = arg_parser.parse_args()
+
+    app.run(debug=options.debug, port=options.port)
