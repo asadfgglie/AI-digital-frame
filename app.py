@@ -213,14 +213,13 @@ def generate():
 
     def log(name: str):
         try:
-            with open(log_path + name.split('/')[-1], 'wb') as f:
-                with open(name, 'rb') as l:
+            with open(name, 'rb') as l:
+                with open(log_path + name.split('/')[-1], 'wb') as f:
                     f.write(l.read())
         except FileNotFoundError:
             pass
 
-    if voice_prompt is not None:
-        log(util.VOICE_PROMPT)
+    log(util.VOICE_PROMPT)
     log(util.IMG_INPUT)
     log(util.IMG_OUTPUT)
     log(util.BGM_OUTPUT)
@@ -258,6 +257,9 @@ def generate():
             nft_response.pop("attributes")
 
             info_json.update(nft_response)
+            logging.info('Success uploading nft artwork!')
+        else:
+            logging.info(f'Fail uploading nft artwork!\nnft server response:\n{nft_response.content}')
     except Exception as e:
         logging.error("Can't upload artwork onto nft!", e)
 
