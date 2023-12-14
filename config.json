@@ -44,41 +44,50 @@
   },
   "whisper_model": "tiny",
   "music_model": "facebook/musicgen-melody",
-  "BGM_duration": "5",
+  "BGM_duration": 15,
   "image_generate_api": "dall-e",
-  "now_prompt_style": "Cute fox girl dall-e",
+  "now_prompt_style": "random",
   "prompt_style": {
     "Cute fox girl": {
       "image_prompt": "blonde hair, long hair, fox ears, curled hair, fox girl, (fluffy tail), fat tail, hands on the ground, gold eyes, black irises, long eyelashes, thick eyelashes, looking at viewer, smile, (gold cheongsam), belt, [ornate clothes], black bowtie, white thighhighs, black stockings,",
-      "bgm_prompt": "casual, light, relaxing, piano music, "
+      "bgm_prompt": "casual, light, relaxing, piano music, ",
+      "random_weight": 0
     },
     "Cute fox girl dall-e": {
-      "image_prompt": "All people are cute anime style girls who has long, and curled hair, and fluffy, fat fox tail, gold eyes. And their also ware Qipao as uniform. "
+      "image_prompt": "All people are cute anime style girls who has long, and curled hair, and fluffy, fat fox tail, gold eyes. And their also ware Qipao as uniform. ",
+      "random_weight": 0
     },
     "animals in fantasy dall-e": {
       "image_prompt": "fantasy scene, Impressionist landscape of a Japanese garden in winter, Cheerful Dogs and Cats is playing in snowing scene,",
-      "bgm_prompt": "orchestra, piano music, fantasy, "
+      "bgm_prompt": "orchestra, piano music, fantasy, ",
+      "random_weight": 0
     },
     "jazz abstract painting dall-e": {
       "image_prompt": "Abstract painting, representing the sound of jazz music, using vibrant colors and erratic shapes",
-      "bgm_prompt": "casual, jazz music, "
+      "bgm_prompt": "casual, jazz music, ",
+      "random_weight": 0
     },
     "Nouveau painting dall-e": {
       "image_prompt": "Art Nouveau painting of a female botanist surrounded by exotic plants in a greenhouse",
-      "bgm_prompt": "piano music, classical, "
+      "bgm_prompt": "piano music, classical, ",
+      "random_weight": 0
     },
     "Underwater photography dall-e": {
       "image_prompt": "Underwater photography of a coral reef, with diverse marine life and a scuba diver for scale",
-      "bgm_prompt": "casual, slow music, "
+      "bgm_prompt": "casual, slow music, ",
+      "random_weight": 0
     },
     "starry sky dall-e": {
       "image_prompt": "Long-exposure night photography of a starry sky over a mountain range, with light trails.",
-      "bgm_prompt": "Songs for the Planetarium, relaxing music, "
+      "bgm_prompt": "Songs for the Planetarium, relaxing music, ",
+      "random_weight": 0
     },
     "game style pixel art dall-e": {
       "image_prompt": "Pixel art of an 8-bit video game character running through a retro platformer level.",
-      "bgm_prompt": "retro game music, pop music, "
+      "bgm_prompt": "retro game music, pop music, ",
+      "random_weight": 0
     }
   },
-  "raspberrypi_server": null
+  "raspberrypi_server": "http://172.20.10.14:5000",
+  "NFT_wallet_address": "0xf9C74b803a81Ee61e05A898fe8B6c3597CdbBd90"
 }

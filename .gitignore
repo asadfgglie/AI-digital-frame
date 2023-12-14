@@ -10,3 +10,4 @@ dev.env
 IMAGE_INPUT.png
 line.json
 IMAGE_OUTPUT_PREVIEW.png
+/static/log/**
