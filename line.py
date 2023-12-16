@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+import os.path
 from typing import Optional
 from pydub import AudioSegment
 
@@ -13,7 +14,8 @@ from linebot import (LineBotApi, WebhookHandler)
 from linebot.exceptions import (InvalidSignatureError)
 from linebot.models import (
     MessageEvent,
-    ImageMessage, ImageSendMessage, TextSendMessage, AudioSendMessage)
+    ImageMessage, ImageSendMessage, TextSendMessage, AudioSendMessage, TextMessage)
+from  linebot.models.events import MessageEvent as MsgEvent
 
 import util
 
@@ -41,6 +43,67 @@ def callback():
         abort(400)
 
     return 'OK'
+
+@handler.add(MessageEvent, message=TextMessage)
+def handle_text_message(event: MsgEvent):
+    message_content: str = event.message.text
+    if message_content == 'SwitchAiApi':
+        logging.info('Load config...')
+
+        current_api = util.config['image_generate_api']
+        switched_to = 'Switched to '
+
+        if current_api in util.IMAGE_GENERATE_API['sd']:
+            switched_to += 'DALL-E'
+            util.save_config("image_generate_api", "dall-e")
+        elif current_api in util.IMAGE_GENERATE_API['dall-e']:
+            switched_to += 'stable diffusion'
+            util.save_config("image_generate_api", "sd")
+
+        line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text = switched_to))
+
+    elif message_content == 'CallPromptExamples':
+        logging.info('load prompt style...')
+        messages = []
+        for style in util.config['prompt_style'].keys():
+            if os.path.isfile(f'./static/style_example/{style}.png'.replace(' ', '_').replace('-', '_')):
+                messages.append(TextSendMessage(style))
+                messages.append(ImageSendMessage(f"{ngrok_url}/style_example/" + f"{style}.png".replace(' ', '_').replace('-', '_'), f"{ngrok_url}/style_example/" + f"{style}.png".replace(' ', '_').replace('-', '_')))
+            else:
+                messages.append(TextSendMessage(style + "\n\n This style doesn't have example Image."))
+
+        messages.append(TextSendMessage('use `!style <style name>` to change prompt style!'))
+        logging.info('sending style examples...')
+        for i in range(0, len(messages), 5):
+            line_bot_api.push_message(
+                event.source.user_id,
+                messages[i: i+5]
+            )
+    elif message_content.startswith('!style '):
+        try:
+            style = message_content[message_content.find(' ')+1:]
+        except:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(f'use `!style <style name>` to change prompt style!\nFor example:\n\n!style {util.config["now_prompt_style"]}')
+            )
+            return
+        util.save_config("now_prompt_style", style)
+        logging.info(f'Change style to \"{util.config["now_prompt_style"]}\".')
+        if style not in util.config['prompt_style'].keys():
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(
+                    f'style \"{util.config["now_prompt_style"]}\" not exist, so prompt style won\'t work.')
+            )
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(
+                    f'Change style to \"{util.config["now_prompt_style"]}\".')
+            )
 
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event):
@@ -76,10 +139,10 @@ def handle_image_message(event):
 
         text = result['img_comment'] + '\n\n - by ChatGPT4'
 
-        text += '\n\n' + ("AI artwork has been uploaded on OpenSea!\n" + result["info"]["os_url"]) if result["info"].get("os_url", False) else 'Oops! Can\'t upload AI artwork on OpenSea!'
+        text += '\n\n' + (("AI artwork has been uploaded on OpenSea!\n" + result["info"]["os_url"]) if result["info"].get("os_url", False) else 'Oops! Can\'t upload AI artwork on OpenSea!')
 
         if raspberrypi_result is None or raspberrypi_result.status_code != 200:
-            text += f"\nCan't connect to raspberrypi! Set up in config or go to {ngrok_url} to set up!"
+            text += f"\n\nCan't connect to raspberrypi!\nSet up in config or go to {ngrok_url} to set up!"
 
         original_img_url = result['info'].get('image', f"{ngrok_url}{log_path[1:]}{util.IMG_OUTPUT[8:]}")
         original_bgm_url = result['info'].get('animation_url', f"{ngrok_url}{log_path[1:]}{util.BGM_OUTPUT[8: -4]}.mp3")

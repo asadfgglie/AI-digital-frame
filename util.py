@@ -19,6 +19,7 @@ from audiocraft.data.audio import audio_write
 from audiocraft.models import MusicGen
 
 CONFIG_FILE = './config.json'
+DEFAULT_CONFIG_FILE = './default_config.json'
 VOICE_PROMPT = './VOICE_PROMPT.wav'
 IMG_INPUT = './IMAGE_INPUT.png'
 IMG_OUTPUT = './static/IMAGE_OUTPUT.png'
@@ -36,8 +37,15 @@ IMAGE_GENERATE_API = {
 }
 
 logging.info('Load config...')
-with open(CONFIG_FILE, 'r') as f:
-    config: dict = json.loads(f.read())
+config = dict()
+try:
+    with open(CONFIG_FILE, 'r') as f:
+        config = json.loads(f.read())
+except FileNotFoundError:
+    with open(DEFAULT_CONFIG_FILE, 'r') as f:
+        config = json.loads(f.read())
+        with open(CONFIG_FILE, 'w') as ff:
+            ff.write(f.read())
 
 logging.info('Load MusicGen model...')
 music_model = MusicGen.get_pretrained(config['music_model'], DEVICE)
@@ -226,6 +234,17 @@ def stable_diffusion_pipline(prompt: str, img: str):
     else:
         return 'stable diffusion error!', response
 
+def load_config():
+    global config
+    try:
+        with open(CONFIG_FILE, 'r') as f:
+            config = json.loads(f.read())
+    except FileNotFoundError:
+        with open(DEFAULT_CONFIG_FILE, 'r') as f:
+            config = json.loads(f.read())
+            with open(CONFIG_FILE, 'w') as ff:
+                ff.write(f.read())
+
 def save_config(key: Union[str, dict, None]=None, value=None):
     """
     save config and reload model if necessary
@@ -245,6 +264,19 @@ def save_config(key: Union[str, dict, None]=None, value=None):
                     if RANDOM_PROMPT_STYLE in v.keys():
                         v.pop(RANDOM_PROMPT_STYLE)
                     for vk in v.keys():
+                        if v[vk].get('image_prompt') is not None:
+                            def generate_example_img():
+                                img = Image.open(io.BytesIO(base64.b64decode(DALL_E_pipline(v[vk].get('image_prompt')))))
+                                img.resize((img.size[0]//2, img.size[1]//2))
+                                img.save(f'./static/style_example/{vk}.png'.replace(' ', '_').replace('-', '_'))
+                            try:
+                                generate_example_img()
+                            except:
+                                try:
+                                    generate_example_img()
+                                except:
+                                    pass
+
                         if v[vk].get('random_weight') is None:
                             v[vk]['weight'] = 0
                 config[k].update(v)

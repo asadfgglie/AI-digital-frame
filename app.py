@@ -18,9 +18,6 @@ parser.add_argument('--host', action='store',
 parser.add_argument('--port', '-p', action='store',
                     type=int, help='start post', default=5000)
 
-parser.add_argument('--ngrok', '-nk', action='store_true',
-                    help='whether use ngrok or not.')
-
 import logging
 logging.basicConfig(level=parser.parse_args().logging_level.upper(), format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logging.info('Importing...')
@@ -41,14 +38,14 @@ if parser.parse_args().env:
         logging.warning('no .env file has load.')
 
 import time
-
+from pathlib import Path
 import requests
 
 import io
 import base64
 from PIL import Image
 
-from flask import Flask, request, jsonify, render_template, redirect
+from flask import Flask, request, jsonify, render_template, redirect, send_file
 
 import util
 import line
@@ -59,6 +56,10 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     return render_template('index.html', raspberrypi_url=util.config['raspberrypi_server'])
+
+@app.route('/style_example/<img_name>')
+def style_example(img_name):
+    return send_file(f'./static/style_example/{img_name}')
 
 @app.route('/config', methods=['GET', 'POST'])
 def config():
@@ -76,6 +77,11 @@ def raspberrypi_url():
     util.save_config("raspberrypi_server", request.values['raspberrypi_url'])
     return redirect('/')
 
+@app.route('/reload', methods=['GET'])
+def reload_config():
+    util.load_config()
+    return redirect('/config')
+
 @app.route('/comment', methods=['POST'])
 def comment():
     if not request.is_json:
@@ -85,16 +91,19 @@ def comment():
     data = request.json
     try:
         path = f"./static/log/{data['time_stmp']}/info.json"
-        score = data['score']
+        score = int(data['score'])
     except Exception as e:
         return jsonify({
             'detail': str(e.args)
         }), 400
 
     with open(path, 'r') as f:
-        prompt_style = json.loads(f.read())['prompt_style']
-    util.config['prompt_style'].get(prompt_style, {"random_weight": 0})["random_weight"] += score
-    util.save_config()
+        prompt_style = json.loads(f.read())['now_prompt_style']
+    try:
+        util.config['prompt_style'][prompt_style]["random_weight"] += score
+        util.save_config()
+    except:
+        logging.warning(f'No prompt style \"{prompt_style}\"')
 
     return jsonify({
         k: util.config["prompt_style"][k]['random_weight'] for k in util.config["prompt_style"].keys()
@@ -259,7 +268,7 @@ def generate():
             info_json.update(nft_response)
             logging.info('Success uploading nft artwork!')
         else:
-            logging.info(f'Fail uploading nft artwork!\nnft server response:\n{nft_response.content}')
+            logging.info(f'Fail uploading nft artwork!\nnft server response:\n{nft_response.text}')
     except Exception as e:
         logging.error("Can't upload artwork onto nft!", e)
 
@@ -276,13 +285,9 @@ if __name__ == '__main__':
         util.PORT = parser.parse_args().port
         if parser.parse_args().host != 'localhost':
             app.register_blueprint(line.line)
-            if parser.parse_args().ngrok:
-                ngrok_connect = ngrok.connect(str(util.PORT), 'http')
-                line.ngrok_url = ngrok_connect.public_url
-                logging.info(f'line-bot webhook public url: {ngrok_connect.public_url}/line/callback')
-            else:
-                line.ngrok_url = parser.parse_args().host
-                logging.info(f'line-bot webhook public url: {line.ngrok_url}/line/callback')
+            ngrok_connect = ngrok.connect(str(util.PORT), 'http')
+            line.ngrok_url = ngrok_connect.public_url
+            logging.info(f'line-bot webhook public url: {ngrok_connect.public_url}/line/callback')
         else:
             logging.warning('Now using localhost as uri. So line bot won\'t activate.')
         app.run(parser.parse_args().host, port=util.PORT)

@@ -11,3 +11,5 @@ IMAGE_INPUT.png
 line.json
 IMAGE_OUTPUT_PREVIEW.png
 /static/log/**
+config.json
+/static/style_example/*.png
