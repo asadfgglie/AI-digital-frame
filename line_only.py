@@ -216,16 +216,16 @@ def handle_text_message(event):
         # Next step: random weight
         buttons_template = ButtonsTemplate(
             title='Last steps!',
-            text='Please set a random weight.',
+            text='Please set a random weight.(Optional)',
             actions=[
                 PostbackAction(
                     label='Set random weight',
                     data='input random weight',
                     input_option='openKeyboard',
-                    fill_in_text='random_weight: '),
+                    fill_in_text='random_weight: 0'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='Please set a random weight.',
+            alt_text='Please set a random weight.(Optional)',
             template=buttons_template)
 
         line_bot_api.reply_message(event.reply_token, template_message)
@@ -288,8 +288,9 @@ def handle_postback_message(event):
             TextSendMessage(text = example))
 
     elif event.postback.data == 'input random weight':
-        example = 'Range of random weight: 0.0 ~ 1.0 \n\n'\
-                'random_weight: 0.5'
+        example = 'Optional settings\n\n'\
+                'You can just push a send button.\n'\
+                'Random weight is 0 as default. And doesn\'t affect your prompt style.'
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text = example))
@@ -306,13 +307,13 @@ def handle_postback_message(event):
 
         reply_message = 'Your prompt style was changed to\n"' + new_prompt_style_title + '"\n\n'
         reply_message += 'Prompt style detail'
-        if config['prompt_style'][new_prompt_style_title]['image_prompt']:
+        if config['prompt_style'][new_prompt_style_title]['image_prompt'] is not None:
             reply_message += '\n\nImage prompt:\n'
             reply_message += config['prompt_style'][new_prompt_style_title]['image_prompt']
-        if config['prompt_style'][new_prompt_style_title]['bgm_prompt']:
+        if config['prompt_style'][new_prompt_style_title]['bgm_prompt'] is not None:
             reply_message += '\n\nBgm prompt:\n'
             reply_message += config['prompt_style'][new_prompt_style_title]['bgm_prompt']
-        if config['prompt_style'][new_prompt_style_title]['random_weight']:
+        if config['prompt_style'][new_prompt_style_title]['random_weight'] is not None:
             reply_message += '\n\nRandom weight:\n'
             reply_message += str(config['prompt_style'][new_prompt_style_title]['random_weight'])
 
