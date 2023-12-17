@@ -14,8 +14,9 @@ from linebot import (LineBotApi, WebhookHandler)
 from linebot.exceptions import (InvalidSignatureError)
 from linebot.models import (
     MessageEvent,
-    ImageMessage, ImageSendMessage, TextSendMessage, AudioSendMessage, TextMessage)
-from  linebot.models.events import MessageEvent as MsgEvent
+    ImageMessage, ImageSendMessage, TextSendMessage, AudioSendMessage, TextMessage, TemplateSendMessage, PostbackAction,
+    ButtonsTemplate)
+from linebot.models.events import MessageEvent as MsgEvent, PostbackEvent
 
 import util
 
@@ -44,8 +45,10 @@ def callback():
 
     return 'OK'
 
+new_prompt_style_title = ''
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event: MsgEvent):
+    global new_prompt_style_title
     message_content: str = event.message.text
     if message_content == 'SwitchAiApi':
         logging.info('Load config...')
@@ -104,6 +107,179 @@ def handle_text_message(event: MsgEvent):
                 TextSendMessage(
                     f'Change style to \"{util.config["now_prompt_style"]}\".')
             )
+
+    elif message_content == 'MakeMyStyle':
+
+        # First step: prompt title
+        buttons_template = ButtonsTemplate(
+            title='4 steps left!',
+            text='Please set a prompt style title.',
+            actions=[
+                PostbackAction(label='Set up',
+                               data='input prompt style title',
+                               input_option='openKeyboard',
+                               fill_in_text='prompt_style_title: '),
+            ])
+        template_message = TemplateSendMessage(
+            alt_text='Please set a prompt style title.',
+            template=buttons_template)
+
+        line_bot_api.reply_message(event.reply_token, template_message)
+
+    elif message_content[0:19] == 'prompt_style_title:':
+        # Add a new prompt style title
+        new_prompt_style_title = message_content[19:]
+        if new_prompt_style_title[0] == ' ':
+            new_prompt_style_title = new_prompt_style_title[1:]
+
+        util.save_config('prompt_style', {new_prompt_style_title: {}})
+
+        # Next step: image prompt
+        buttons_template = ButtonsTemplate(
+            title='3 steps left!',
+            text='Please set a image prompt.',
+            actions=[
+                PostbackAction(
+                    label='Set image prompt',
+                    data='input image prompt',
+                    input_option='openKeyboard',
+                    fill_in_text='image_prompt: '),
+            ])
+        template_message = TemplateSendMessage(
+            alt_text='Please set a image prompt.',
+            template=buttons_template)
+
+        line_bot_api.reply_message(event.reply_token, template_message)
+
+
+    elif message_content[0:13] == 'image_prompt:':
+        # Add a new image prompt
+        new_image_prompt = message_content[13:]
+        if new_image_prompt[0] == ' ':
+            new_image_prompt = new_image_prompt[1:]
+
+        util.save_config('prompt_style', {new_prompt_style_title:{'image_prompt':new_image_prompt}})
+
+        # Next step: bgm prompt
+        buttons_template = ButtonsTemplate(
+            title='2 steps left!',
+            text='Please set a bgm prompt.',
+            actions=[
+                PostbackAction(
+                    label='Set bgm prompt',
+                    data='input bgm prompt',
+                    input_option='openKeyboard',
+                    fill_in_text='bgm_prompt: '),
+            ])
+        template_message = TemplateSendMessage(
+            alt_text='Please set a bgm prompt.',
+            template=buttons_template)
+
+        line_bot_api.reply_message(event.reply_token, template_message)
+
+
+    elif message_content[0:11] == 'bgm_prompt:':
+        # Add a new bgm prompt
+        new_bgm_prompt = message_content[11:]
+        if new_bgm_prompt[0] == ' ':
+            new_bgm_prompt = new_bgm_prompt[1:]
+
+        util.config['prompt_style'][new_prompt_style_title]['bgm_prompt'] = new_bgm_prompt
+        util.save_config()
+
+        # Next step: random weight
+        buttons_template = ButtonsTemplate(
+            title='Last steps!',
+            text='Please set a random weight.(Optional)',
+            actions=[
+                PostbackAction(
+                    label='Set random weight',
+                    data='input random weight',
+                    input_option='openKeyboard',
+                    fill_in_text='random_weight: 0'),
+            ])
+        template_message = TemplateSendMessage(
+            alt_text='Please set a random weight.(Optional)',
+            template=buttons_template)
+
+        line_bot_api.reply_message(event.reply_token, template_message)
+
+
+    elif message_content[0:14] == 'random_weight:':
+        # Add a new random weight
+        new_random_weight = int(message_content[14:])
+
+        util.config['prompt_style'][new_prompt_style_title]['random_weight'] = new_random_weight
+        util.save_config()
+
+        # Next step: random weight
+        buttons_template = ButtonsTemplate(
+            title='Complete!',
+            text='Please apply your new style.',
+            actions=[
+                PostbackAction(
+                    label='apply',
+                    data='apply new style'),
+            ])
+        template_message = TemplateSendMessage(
+            alt_text='Please apply your new style.',
+            template=buttons_template)
+
+        line_bot_api.reply_message(event.reply_token, template_message)
+
+@handler.add(PostbackEvent)
+def handle_postback_message(event):
+
+    if event.postback.data == 'input prompt style title':
+        example = 'Example of prompt style title\n\n'\
+                'prompt_style_title: starry sky dall-e'
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text = example))
+
+    elif event.postback.data == 'input image prompt':
+        example = 'Example of image prompt\n\n'\
+                'image_prompt: '\
+                'Long-exposure night photography of a starry sky over a mountain range, with light trails.'
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text = example))
+
+    elif event.postback.data == 'input bgm prompt':
+        example = 'Example of bgm prompt\n\n'\
+                'bgm_prompt: '\
+                'Songs for the Planetarium, relaxing music,'
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text = example))
+
+    elif event.postback.data == 'input random weight':
+        example = 'Optional settings\n\n'\
+                'You can just push a send button.\n'\
+                'Random weight is 0 as default. And doesn\'t affect your prompt style.'
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text = example))
+
+    elif event.postback.data == 'apply new style':
+        util.config['now_prompt_style'] = new_prompt_style_title
+        util.save_config()
+
+        reply_message = 'Your prompt style was changed to\n"' + new_prompt_style_title + '"\n\n'
+        reply_message += 'Prompt style detail'
+        if util.config['prompt_style'][new_prompt_style_title]['image_prompt'] is not None:
+            reply_message += '\n\nImage prompt:\n'
+            reply_message += util.config['prompt_style'][new_prompt_style_title]['image_prompt']
+        if util.config['prompt_style'][new_prompt_style_title]['bgm_prompt'] is not None:
+            reply_message += '\n\nBgm prompt:\n'
+            reply_message += util.config['prompt_style'][new_prompt_style_title]['bgm_prompt']
+        if util.config['prompt_style'][new_prompt_style_title]['random_weight'] is not None:
+            reply_message += '\n\nRandom weight:\n'
+            reply_message += str(util.config['prompt_style'][new_prompt_style_title]['random_weight'])
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text = reply_message))
 
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event):
