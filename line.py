@@ -15,7 +15,7 @@ from linebot.exceptions import (InvalidSignatureError)
 from linebot.models import (
     MessageEvent,
     ImageMessage, ImageSendMessage, TextSendMessage, AudioSendMessage, TextMessage, TemplateSendMessage, PostbackAction,
-    ButtonsTemplate)
+    ButtonsTemplate, QuickReply, QuickReplyButton)
 from linebot.models.events import MessageEvent as MsgEvent, PostbackEvent
 
 import util
@@ -227,6 +227,24 @@ def handle_text_message(event: MsgEvent):
 
         line_bot_api.reply_message(event.reply_token, template_message)
 
+    elif message_content == 'rating':
+
+        rating = QuickReply(items=[
+            QuickReplyButton(action=PostbackAction(label='Excellent', data='rating:2')),
+            QuickReplyButton(action=PostbackAction(label='Very Good', data='rating:1')),
+            QuickReplyButton(action=PostbackAction(label='Fair', data='rating:0')),
+            QuickReplyButton(action=PostbackAction(label='Poor', data='rating:-1')),
+            QuickReplyButton(action=PostbackAction(label='Unacceptable', data='rating:-2'))])
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            [
+                TextSendMessage(text = 'image'),
+                TextSendMessage(text = 'text'),
+                TextSendMessage(text = 'audio'),
+                TextSendMessage(text='Are you satisfied with the output?', quick_reply = rating),
+            ])
+
 @handler.add(PostbackEvent)
 def handle_postback_message(event):
 
@@ -280,6 +298,18 @@ def handle_postback_message(event):
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text = reply_message))
+
+    elif event.postback.data[0:7] == 'rating:':
+        rating = int(event.postback.data[7:])
+
+        prompt_style_title = util.config['now_prompt_style']
+        if prompt_style_title in util.config['prompt_style']:
+            util.config['prompt_style'][prompt_style_title]['random_weight'] += rating
+            util.save_config()
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text = 'Thank you for your feedback!'))
 
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event):
