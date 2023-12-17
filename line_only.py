@@ -18,6 +18,7 @@ from linebot.models import (
     ImageMessage, ImageSendMessage,
     TextMessage, TextSendMessage,
     ButtonsTemplate, TemplateSendMessage, PostbackAction,
+    QuickReply, QuickReplyButton,
     AudioSendMessage)
 
 # import util
@@ -260,6 +261,24 @@ def handle_text_message(event):
         line_bot_api.reply_message(event.reply_token, template_message)
 
 
+    elif message_content == 'rating':
+
+        rating = QuickReply(items=[
+            QuickReplyButton(action=PostbackAction(label='Excellent', data='rating:1.0')),
+            QuickReplyButton(action=PostbackAction(label='Very Good', data='rating:0.5')),
+            QuickReplyButton(action=PostbackAction(label='Fair', data='rating:0.0')),
+            QuickReplyButton(action=PostbackAction(label='Poor', data='rating:-0.5')),
+            QuickReplyButton(action=PostbackAction(label='Unacceptable', data='rating:-1.0'))])
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            [
+                TextSendMessage(text = 'image'),
+                TextSendMessage(text = 'text'),
+                TextSendMessage(text = 'audio'),
+                TextSendMessage(text='Are you satisfied with the output?', quick_reply = rating),
+            ])
+
 
 @handler.add(PostbackEvent)
 def handle_postback_message(event):
@@ -320,6 +339,26 @@ def handle_postback_message(event):
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text = reply_message))
+
+
+    elif event.postback.data[0:7] == 'rating:':
+        rating = float(event.postback.data[7:])
+        logging.info('Load config...')
+        with open(CONFIG_FILE, 'r') as f:
+            config: dict = json.loads(f.read())
+
+        prompt_style_title = config['now_prompt_style']
+        if prompt_style_title in config['prompt_style']:
+            logging.info('Rating a prompt style in config...')
+            config['prompt_style'][prompt_style_title]['rating'] = rating
+            with open(CONFIG_FILE, 'w') as f:
+                json.dump(config, f, indent=2)
+        else:
+            pass
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text = 'Thank you for your feedback!'))
 
 
 @handler.add(MessageEvent, message=ImageMessage)
