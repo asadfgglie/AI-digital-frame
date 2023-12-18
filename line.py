@@ -227,23 +227,6 @@ def handle_text_message(event: MsgEvent):
 
         line_bot_api.reply_message(event.reply_token, template_message)
 
-    elif message_content == 'rating':
-
-        rating = QuickReply(items=[
-            QuickReplyButton(action=PostbackAction(label='Excellent', data='rating:2')),
-            QuickReplyButton(action=PostbackAction(label='Very Good', data='rating:1')),
-            QuickReplyButton(action=PostbackAction(label='Fair', data='rating:0')),
-            QuickReplyButton(action=PostbackAction(label='Poor', data='rating:-1')),
-            QuickReplyButton(action=PostbackAction(label='Unacceptable', data='rating:-2'))])
-
-        line_bot_api.reply_message(
-            event.reply_token,
-            [
-                TextSendMessage(text = 'image'),
-                TextSendMessage(text = 'text'),
-                TextSendMessage(text = 'audio'),
-                TextSendMessage(text='Are you satisfied with the output?', quick_reply = rating),
-            ])
 
 @handler.add(PostbackEvent)
 def handle_postback_message(event):
@@ -352,6 +335,12 @@ def handle_image_message(event):
 
         original_img_url = result['info'].get('image', f"{ngrok_url}{log_path[1:]}{util.IMG_OUTPUT[8:]}")
         original_bgm_url = result['info'].get('animation_url', f"{ngrok_url}{log_path[1:]}{util.BGM_OUTPUT[8: -4]}.mp3")
+        rating = QuickReply(items=[
+            QuickReplyButton(action=PostbackAction(label='Excellent', data='rating:2')),
+            QuickReplyButton(action=PostbackAction(label='Very Good', data='rating:1')),
+            QuickReplyButton(action=PostbackAction(label='Fair', data='rating:0')),
+            QuickReplyButton(action=PostbackAction(label='Poor', data='rating:-1')),
+            QuickReplyButton(action=PostbackAction(label='Unacceptable', data='rating:-2'))])
         line_bot_api.reply_message(
             event.reply_token,
             [
@@ -360,7 +349,8 @@ def handle_image_message(event):
                     preview_image_url=f"{ngrok_url}{log_path[1:]}{util.IMG_OUTPUT_PREVIEW[8:]}"
                 ),
                 TextSendMessage(text),
-                AudioSendMessage(original_bgm_url, int(util.config["BGM_duration"]))
+                AudioSendMessage(original_bgm_url, int(util.config["BGM_duration"])),
+                TextSendMessage(text='Are you satisfied with the output?', quick_reply = rating)
             ]
         )
     else:
