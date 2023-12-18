@@ -45,7 +45,7 @@ def callback():
 
     return 'OK'
 
-new_prompt_style_title = ''
+new_prompt_style_title = None
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event: MsgEvent):
     global new_prompt_style_title
@@ -207,7 +207,10 @@ def handle_text_message(event: MsgEvent):
 
     elif message_content[0:14] == 'random_weight:':
         # Add a new random weight
-        new_random_weight = int(message_content[14:])
+        try:
+            new_random_weight = int(message_content[14:])
+        except:
+            new_random_weight = 0
 
         util.config['prompt_style'][new_prompt_style_title]['random_weight'] = new_random_weight
         util.save_config()
@@ -226,6 +229,7 @@ def handle_text_message(event: MsgEvent):
             template=buttons_template)
 
         line_bot_api.reply_message(event.reply_token, template_message)
+        new_prompt_style_title = None
 
 
 @handler.add(PostbackEvent)
@@ -283,9 +287,10 @@ def handle_postback_message(event):
             TextSendMessage(text = reply_message))
 
     elif event.postback.data[0:7] == 'rating:':
-        rating = int(event.postback.data[7:])
+        prompt_style_title, rating = str(event.postback.data).split(',')
+        prompt_style_title = prompt_style_title.split(':')[-1]
+        rating = int(rating.split(':')[-1])
 
-        prompt_style_title = util.config['now_prompt_style']
         if prompt_style_title in util.config['prompt_style']:
             util.config['prompt_style'][prompt_style_title]['random_weight'] += rating
             util.save_config()
@@ -336,11 +341,11 @@ def handle_image_message(event):
         original_img_url = result['info'].get('image', f"{ngrok_url}{log_path[1:]}{util.IMG_OUTPUT[8:]}")
         original_bgm_url = result['info'].get('animation_url', f"{ngrok_url}{log_path[1:]}{util.BGM_OUTPUT[8: -4]}.mp3")
         rating = QuickReply(items=[
-            QuickReplyButton(action=PostbackAction(label='Excellent', data='rating:2')),
-            QuickReplyButton(action=PostbackAction(label='Very Good', data='rating:1')),
-            QuickReplyButton(action=PostbackAction(label='Fair', data='rating:0')),
-            QuickReplyButton(action=PostbackAction(label='Poor', data='rating:-1')),
-            QuickReplyButton(action=PostbackAction(label='Unacceptable', data='rating:-2'))])
+            QuickReplyButton(action=PostbackAction(label='Excellent', data=f'style:{result["info"]["prompt_style"]},rating:2')),
+            QuickReplyButton(action=PostbackAction(label='Very Good', data=f'style:{result["info"]["prompt_style"]},rating:1')),
+            QuickReplyButton(action=PostbackAction(label='Fair', data=f'style:{result["info"]["prompt_style"]},rating:0')),
+            QuickReplyButton(action=PostbackAction(label='Poor', data=f'style:{result["info"]["prompt_style"]},rating:-1')),
+            QuickReplyButton(action=PostbackAction(label='Unacceptable', data=f'style:{result["info"]["prompt_style"]},rating:-2'))])
         line_bot_api.reply_message(
             event.reply_token,
             [
