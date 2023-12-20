@@ -107,6 +107,7 @@ def handle_text_message(event: MsgEvent):
                 event.source.user_id,
                 messages[i: i+5]
             )
+
     elif message_content.startswith('!style '):
         try:
             style = message_content[message_content.find(' ')+1:]
@@ -197,7 +198,6 @@ def handle_text_message(event: MsgEvent):
 
         line_bot_api.reply_message(event.reply_token, template_message)
 
-
     elif message_content[0:13] == 'image_prompt:':
         # Add a new image prompt
         new_image_prompt = message_content[13:]
@@ -222,7 +222,6 @@ def handle_text_message(event: MsgEvent):
             template=buttons_template)
 
         line_bot_api.reply_message(event.reply_token, template_message)
-
 
     elif message_content[0:11] == 'bgm_prompt:':
         # Add a new bgm prompt
@@ -249,7 +248,6 @@ def handle_text_message(event: MsgEvent):
             template=buttons_template)
 
         line_bot_api.reply_message(event.reply_token, template_message)
-
 
     elif message_content[0:14] == 'random_weight:':
         # Add a new random weight
@@ -331,7 +329,7 @@ def handle_postback_message(event):
         new_prompt_style_title = None
 
     elif event.postback.data[0:7] == 'rating:':
-        prompt_style_title, rating = str(event.postback.data).split(',')
+        rating, prompt_style_title = str(event.postback.data).split(',')
         prompt_style_title = prompt_style_title.split(':')[-1]
         rating = int(rating.split(':')[-1])
 
@@ -385,11 +383,11 @@ def handle_image_message(event):
         original_img_url = result['info'].get('image', f"{ngrok_url}{log_path[1:]}{util.IMG_OUTPUT[8:]}")
         original_bgm_url = result['info'].get('animation_url', f"{ngrok_url}{log_path[1:]}{util.BGM_OUTPUT[8: -4]}.mp3")
         rating = QuickReply(items=[
-            QuickReplyButton(action=PostbackAction(label='Excellent', data=f'style:{result["info"]["prompt_style"]},rating:2')),
-            QuickReplyButton(action=PostbackAction(label='Very Good', data=f'style:{result["info"]["prompt_style"]},rating:1')),
-            QuickReplyButton(action=PostbackAction(label='Fair', data=f'style:{result["info"]["prompt_style"]},rating:0')),
-            QuickReplyButton(action=PostbackAction(label='Poor', data=f'style:{result["info"]["prompt_style"]},rating:-1')),
-            QuickReplyButton(action=PostbackAction(label='Unacceptable', data=f'style:{result["info"]["prompt_style"]},rating:-2'))])
+            QuickReplyButton(action=PostbackAction(label='Excellent', data=f'rating:2,style:{result["info"]["prompt_style"]}')),
+            QuickReplyButton(action=PostbackAction(label='Very Good', data=f'rating:1,style:{result["info"]["prompt_style"]}')),
+            QuickReplyButton(action=PostbackAction(label='Fair', data=f'rating:0,style:{result["info"]["prompt_style"]}')),
+            QuickReplyButton(action=PostbackAction(label='Poor', data=f'rating:-1,style:{result["info"]["prompt_style"]}')),
+            QuickReplyButton(action=PostbackAction(label='Unacceptable', data=f'rating:-2,style:{result["info"]["prompt_style"]}'))])
         line_bot_api.reply_message(
             event.reply_token,
             [
