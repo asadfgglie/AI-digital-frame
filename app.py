@@ -38,7 +38,8 @@ if parser.parse_args().env:
         logging.warning('no .env file has load.')
 
 import time
-from pathlib import Path
+import matplotlib.pyplot as plt
+import seaborn as sns
 import requests
 
 import io
@@ -60,6 +61,44 @@ def index():
 @app.route('/style_example/<img_name>')
 def style_example(img_name):
     return send_file(f'./static/style_example/{img_name}')
+
+@app.route('/analysis')
+def analysis():
+    style_list = list(util.config["prompt_style"].keys())
+    for i, s in enumerate(style_list):
+        if len(s) > 25:
+            style_list[i] = s[:10] + ' ... ' + s[-10:]
+    weight = util.softmax(np.array([v['random_weight'] for v in util.config["prompt_style"].values()]))
+    # Figure Size
+    fig, ax = plt.subplots(figsize=(16, 9))
+
+    # Horizontal Bar Plot
+    ax.barh(style_list, weight)
+
+    # Remove axes splines
+    for s in ['top', 'bottom', 'left', 'right']:
+        ax.spines[s].set_visible(False)
+
+    # Remove x, y Ticks
+    ax.xaxis.set_ticks_position('none')
+    ax.yaxis.set_ticks_position('none')
+
+    # Add padding between axes and labels
+    ax.xaxis.set_tick_params(pad=5)
+    ax.yaxis.set_tick_params(pad=10)
+
+    # Add x, y gridlines
+    ax.grid(color='grey',
+            linestyle='-.', linewidth=0.5,
+            alpha=0.2)
+
+    # Show top values
+    ax.invert_yaxis()
+
+    # Add Plot Title
+    ax.set_title('Prompt style preferences', loc='left')
+    plt.savefig(util.ANALYSIS_RESULT)
+    return send_file(util.ANALYSIS_RESULT)
 
 @app.route('/config', methods=['GET', 'POST'])
 def config():

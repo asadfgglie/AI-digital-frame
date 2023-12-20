@@ -26,6 +26,8 @@ IMG_OUTPUT = './static/IMAGE_OUTPUT.png'
 IMG_OUTPUT_PREVIEW = './static/IMAGE_OUTPUT_PREVIEW.png'
 BGM_OUTPUT = './static/BGM_OUTPUT.wav'
 RANDOM_PROMPT_STYLE = 'random'
+ANALYSIS_RESULT = './analysis_result.png'
+
 PORT = 5000
 
 

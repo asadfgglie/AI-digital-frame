@@ -13,3 +13,4 @@ IMAGE_OUTPUT_PREVIEW.png
 /static/log/**
 config.json
 /static/style_example/*.png
+analysis_result.png
