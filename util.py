@@ -278,7 +278,7 @@ def save_config(key: Union[str, dict, None]=None, value=None):
                                     pass
 
                         if v[vk].get('random_weight') is None:
-                            v[vk]['weight'] = 0
+                            v[vk]['random_weight'] = 0
                 config[k].update(v)
             else:
                 config[k] = v

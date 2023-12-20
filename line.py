@@ -45,7 +45,7 @@ def callback():
 
     return 'OK'
 
-new_prompt_style_title = None
+new_prompt_style_title: Optional[str] = None
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event: MsgEvent):
     global new_prompt_style_title
@@ -71,11 +71,34 @@ def handle_text_message(event: MsgEvent):
         logging.info('load prompt style...')
         messages = []
         for style in util.config['prompt_style'].keys():
+            messages.append(TemplateSendMessage(alt_text=f'use `!style {style}` to change prompt style!',
+                                                template=ButtonsTemplate(title=style[:20],
+                                                                         text=style[:60],
+                                                                         actions=[
+                                                                             PostbackAction(label='use the prompt style',
+                                                                                            data='_',
+                                                                                            input_option='openKeyboard',
+                                                                                            fill_in_text=f'!style {style}'
+                                                                                            ),
+                                                                             PostbackAction(label='delete the style',
+                                                                                            data='_',
+                                                                                            input_option='openKeyboard',
+                                                                                            fill_in_text=f'!delete {style}')
+                                                                         ])))
             if os.path.isfile(f'./static/style_example/{style}.png'.replace(' ', '_').replace('-', '_')):
-                messages.append(TextSendMessage(style))
                 messages.append(ImageSendMessage(f"{ngrok_url}/style_example/" + f"{style}.png".replace(' ', '_').replace('-', '_'), f"{ngrok_url}/style_example/" + f"{style}.png".replace(' ', '_').replace('-', '_')))
             else:
-                messages.append(TextSendMessage(style + "\n\n This style doesn't have example Image."))
+                messages.append(TextSendMessage("This style doesn't have example Image."))
+        messages.append(TemplateSendMessage(alt_text=f'use `!style random` to change prompt style!',
+                                                template=ButtonsTemplate(title='random',
+                                                                         text='random',
+                                                                         actions=[
+                                                                             PostbackAction(label='use the prompt style',
+                                                                                            data='_',
+                                                                                            input_option='openKeyboard',
+                                                                                            fill_in_text=f'!style random'
+                                                                                            )
+                                                                         ])))
 
         messages.append(TextSendMessage('use `!style <style name>` to change prompt style!'))
         logging.info('sending style examples...')
@@ -95,7 +118,7 @@ def handle_text_message(event: MsgEvent):
             return
         util.save_config("now_prompt_style", style)
         logging.info(f'Change style to \"{util.config["now_prompt_style"]}\".')
-        if style not in util.config['prompt_style'].keys():
+        if style not in util.config['prompt_style'].keys() and style != 'random':
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(
@@ -107,6 +130,29 @@ def handle_text_message(event: MsgEvent):
                 TextSendMessage(
                     f'Change style to \"{util.config["now_prompt_style"]}\".')
             )
+
+    elif message_content.startswith('!delete '):
+        try:
+            style = message_content[message_content.find(' ')+1:]
+        except:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(f'use `!delete <style name>` to delete prompt style!\nFor example:\n\n!delete example')
+            )
+            return
+        try:
+            util.config['prompt_style'].pop(style)
+            util.save_config()
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(f'successfully delete style: ({style})')
+            )
+        except:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(f'style: ({style}) doesn\'t exist.')
+            )
+            return
 
     elif message_content == 'MakeMyStyle':
 
@@ -229,12 +275,11 @@ def handle_text_message(event: MsgEvent):
             template=buttons_template)
 
         line_bot_api.reply_message(event.reply_token, template_message)
-        new_prompt_style_title = None
 
 
 @handler.add(PostbackEvent)
 def handle_postback_message(event):
-
+    global new_prompt_style_title
     if event.postback.data == 'input prompt style title':
         example = 'Example of prompt style title\n\n'\
                 'prompt_style_title: starry sky dall-e'
@@ -245,7 +290,8 @@ def handle_postback_message(event):
     elif event.postback.data == 'input image prompt':
         example = 'Example of image prompt\n\n'\
                 'image_prompt: '\
-                'Long-exposure night photography of a starry sky over a mountain range, with light trails.'
+                'Long-exposure night photography of a starry sky over a mountain range, with light trails.'\
+                '\n\nThis operation will take a little time for generating prompt style example image!'
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text = example))
@@ -267,10 +313,7 @@ def handle_postback_message(event):
             TextSendMessage(text = example))
 
     elif event.postback.data == 'apply new style':
-        util.config['now_prompt_style'] = new_prompt_style_title
-        util.save_config()
-
-        reply_message = 'Your prompt style was changed to\n"' + new_prompt_style_title + '"\n\n'
+        reply_message = 'Your prompt style was changed to\n"' + str(new_prompt_style_title) + '"\n\n'
         reply_message += 'Prompt style detail'
         if util.config['prompt_style'][new_prompt_style_title]['image_prompt'] is not None:
             reply_message += '\n\nImage prompt:\n'
@@ -285,6 +328,7 @@ def handle_postback_message(event):
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text = reply_message))
+        new_prompt_style_title = None
 
     elif event.postback.data[0:7] == 'rating:':
         prompt_style_title, rating = str(event.postback.data).split(',')
