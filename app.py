@@ -39,7 +39,6 @@ if parser.parse_args().env:
 
 import time
 import matplotlib.pyplot as plt
-import seaborn as sns
 import requests
 
 import io
@@ -52,7 +51,7 @@ import util
 import line
 logging.info('Import done.')
 
-app = Flask(__name__)
+app = util.app
 
 @app.route('/')
 def index():
@@ -140,6 +139,7 @@ def comment():
         prompt_style = json.loads(f.read())['now_prompt_style']
     try:
         util.config['prompt_style'][prompt_style]["random_weight"] += score
+        logging.info(f'{prompt_style}, {util.config["prompt_style"][prompt_style]["random_weight"]}')
         util.save_config()
     except:
         logging.warning(f'No prompt style \"{prompt_style}\"')
@@ -176,10 +176,10 @@ def generate():
             style = random.choices(style_list, weight)[0]
             logging.info('random prompt style: ' + style)
         else:
-            try:
-                style = util.config["prompt_style"][util.config['now_prompt_style']]
+            style = util.config['now_prompt_style']
+            if style in util.config['prompt_style']:
                 logging.info('use prompt style: ' + util.config['now_prompt_style'])
-            except:
+            else:
                 logging.info(f'Not find `{util.config["now_prompt_style"]}` prompt style.')
         try:
             image_prompt = util.config["prompt_style"][style]['image_prompt']
@@ -194,7 +194,7 @@ def generate():
         with open(util.VOICE_PROMPT, 'wb') as f:
             logging.info('save ' + util.VOICE_PROMPT)
             f.write(base64.b64decode(voice_prompt))
-        voice_prompt = util.whisper_model.transcribe(util.VOICE_PROMPT)["text"]
+        voice_prompt = util.whisper_model.transcribe(util.VOICE_PROMPT, task='translate')["text"]
         logging.info('transcribe voice: ' + voice_prompt)
     else:
         voice_prompt = ''
@@ -240,10 +240,11 @@ def generate():
     bgm = util.music_gen_pipline(bgm_prompt + ('"' + voice_prompt + '", ' if voice_prompt is not None else '') + gpt4_reply["bgm_prompt"],
                            util.VOICE_PROMPT if voice_prompt is not None else None)
 
-
+    logging.info('GPT4 commenting...')
     pic_comment = util.GPT4_pipline(img)
     logging.info('GPT4 comment: ' + pic_comment)
 
+    logging.info('Logging generate result...')
     time_stmp = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime(time.time()))
     log_path = f'./static/log/{time_stmp}/'
 
@@ -289,27 +290,29 @@ def generate():
     except:
         title = pic_comment.split('\n')[0]
 
-    try:
-        nft_response = requests.post('https://artframe.kjchen.cloud/genNFT', json={
-            "name": title,  # NFT title
-            "to": util.config['NFT_wallet_address'],  # 鑄造出來的 NFT 要傳送到哪個錢包地址（不知道怎麼填就填一樣就好）
-            "image": img,
-            "description": pic_comment, # NFT 介紹
-            "animation_url": bgm,  # NFT 音檔
-            "attributes": [info_json]
-        })
-        if nft_response.status_code == 200:
-            nft_response = dict(nft_response.json())
-            nft_response.pop("to")
-            nft_response.pop("description")
-            nft_response.pop("attributes")
+    if util.config['is_upload_nft']:
+        try:
+            logging.info('Uploading nft...')
+            nft_response = requests.post('https://artframe.kjchen.cloud/genNFT', json={
+                "name": title,  # NFT title
+                "to": util.config['NFT_wallet_address'],  # 鑄造出來的 NFT 要傳送到哪個錢包地址（不知道怎麼填就填一樣就好）
+                "image": img,
+                "description": pic_comment, # NFT 介紹
+                "animation_url": bgm,  # NFT 音檔
+                "attributes": [info_json]
+            })
+            if nft_response.status_code == 200:
+                nft_response = dict(nft_response.json())
+                nft_response.pop("to")
+                nft_response.pop("description")
+                nft_response.pop("attributes")
 
-            info_json.update(nft_response)
-            logging.info('Success uploading nft artwork!')
-        else:
-            logging.info(f'Fail uploading nft artwork!\nnft server response:\n{nft_response.text}')
-    except Exception as e:
-        logging.error("Can't upload artwork onto nft!", e)
+                info_json.update(nft_response)
+                logging.info('Success uploading nft artwork!')
+            else:
+                logging.info(f'Fail uploading nft artwork!\nnft server response:\n{nft_response.text}')
+        except Exception as e:
+            logging.error("Can't upload artwork onto nft!", e)
 
     return jsonify({
         'img_comment': pic_comment,
@@ -329,7 +332,7 @@ if __name__ == '__main__':
             logging.info(f'line-bot webhook public url: {ngrok_connect.public_url}/line/callback')
         else:
             logging.warning('Now using localhost as uri. So line bot won\'t activate.')
-        app.run(parser.parse_args().host, port=util.PORT)
+        app.run(parser.parse_args().host, port=util.PORT, threaded=True)
     except KeyboardInterrupt:
         ngrok.kill()
         exit(0)
